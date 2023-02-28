@@ -10,14 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-22.04
 
-    name: Build and Test on OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+    name: Elixir build and test
     steps:
 
     - uses: actions/checkout@v2
-
-    - uses: webfactory/ssh-agent@v0.5.4
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_REPO }}
 
     - uses: erlef/setup-beam@v1
       with:
