@@ -21,7 +21,7 @@ jobs:
         version-file: .tool-versions
 
     - name: Install dependencies
-      run: cd measurements && mix deps.get
+      run: mix deps.get
 
     - name: Run tests
-      run: cd measurements && mix test
+      run: mix test
