@@ -7,6 +7,8 @@ defmodule Measurements.MixProject do
       version: "0.1.1",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
+      description: description(),
+      package: package(),
       deps: deps(),
 
        # Docs
@@ -25,6 +27,20 @@ defmodule Measurements.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp description() do
+    "Measurements helps to manage values with errors, representing physical quantities.
+    The package provides error propagation during calculations, as well as some automatic unit conversion."
+  end
+
+  defp package() do
+    [
+      files: ~w(lib priv .formatter.exs mix.exs README* readme* ../LICENSE*
+                ../license* CHANGELOG* changelog* src),
+      licenses: ["GPL-3.0-or-later"],
+      links: %{"GitHub" => "https://github.com/asmodehn/measurements.ex"}
     ]
   end
 

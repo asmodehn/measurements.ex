@@ -3,6 +3,9 @@ defmodule Measurements.Unit.Time do
   alias Measurements.Dimension
   alias Measurements.Scale
 
+  alias Measurements.Unit.Dimensionable
+  alias Measurements.Unit.Scalable
+
   # The one place to manage the time unit atoms, for compatibility with Elixir.System
   # exposing them outside this module
   defmacro second, do: quote do: :second

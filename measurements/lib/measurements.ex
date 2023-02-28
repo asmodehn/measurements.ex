@@ -72,4 +72,10 @@ defmodule Measurements do
     end
   end
 
+
+# TODO : sum , product, etc.
+
+
+
+
 end

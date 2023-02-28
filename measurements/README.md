@@ -17,6 +17,16 @@ Dimensions supported:
 - [ ] Amount of Substance (N)
 - [ ] Luminous Intensity (J)
 
+## Testing in Iex
+
+TODO : iex
+
+## Testing in Livebook
+
+
+TODO: livebook
+
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
