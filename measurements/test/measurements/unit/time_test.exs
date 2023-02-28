@@ -4,75 +4,85 @@ defmodule Measurements.Unit.TimeTest do
 
   alias Measurements.Unit.Time
 
-  # describe "Time unit new/1 supports all time units supported by Elixir.System" do
-  #   test ":second, :millisecond, :microsecond, :nanosecond" do
-  #     assert Time.new(:second) == :second
-  #     assert Time.new(:millisecond) == :millisecond
-  #     assert Time.new(:microsecond) == :microsecond
-  #     assert Time.new(:nanosecond) == :nanosecond
-  #   end
+  alias Measurements.Dimension
+  alias Measurements.Scale
 
-  #   test "positive integer for \"per second\" ie. frequency" do
-  #     assert Time.new(60) == 60
-  #   end
-  # end
 
-  # describe "Time unit new/1 also support invert frequency units" do
-  #   test ":hertz, :kilohertz, :megahertz, :gigahertz" do
-  #     assert Time.new(:hertz) == 1
-  #     assert Time.new(:kilohertz) == 1_000
-  #     assert Time.new(:megahertz) == 1_000_000
-  #     assert Time.new(:gigahertz) == 1_000_000_000
-  #   end
-  # end
+  describe "scale/1" do
+    test "provide the scale of a time unit" do
+      assert Time.scale(Time.second)== Scale.new(0)
+      assert Time.scale(Time.millisecond)== Scale.new(-3)
+      assert Time.scale(Time.microsecond)== Scale.new(-6)
+      assert Time.scale(Time.nanosecond)== Scale.new(-9)
 
-  # describe "Time unit new/1 errors explicitely" do
-  #   test "unknown atom" do
-  #     assert_raise(ArgumentError, fn -> Time.new(:something_else) end)
-  #   end
-  # end
+      assert Time.scale(1)== Scale.new(0)
+      assert Time.scale(10)== Scale.new(-1)
+      assert Time.scale(100)== Scale.new(-2)
+      assert Time.scale(1000)== Scale.new(-3)
 
-  # describe "Time unit ratio/2 supports all arguments configuration" do
-  #   test "second, millisecond, microsecond, nanosecond " do
-  #     assert Time.ratio(:second, :millisecond) == 1_000
-  #     assert Time.ratio(:second, :microsecond) == 1_000_000
-  #     assert Time.ratio(:second, :nanosecond) == 1_000_000_000
-  #     assert Time.ratio(:millisecond, :microsecond) == 1_000
-  #     assert Time.ratio(:millisecond, :nanosecond) == 1_000_000
-  #     assert Time.ratio(:microsecond, :nanosecond) == 1_000
+      # TODO
+      # assert Time.scale(60) == Scale.new()
 
-  #     assert Time.ratio(:second, :second) == 1
-  #     assert Time.ratio(:millisecond, :millisecond) == 1
-  #     assert Time.ratio(:microsecond, :microsecond) == 1
-  #     assert Time.ratio(:nanosecond, :nanosecond) == 1
-  #   end
+      assert Time.scale(Time.hertz) == Scale.new(0)
+      assert Time.scale(Time.kilohertz) == Scale.new(3)
+      assert Time.scale(Time.megahertz) == Scale.new(6)
+      assert Time.scale(Time.gigahertz) == Scale.new(9)
+    end
 
-  #   test "hertz, kilohertz, megahertz, gigahertz " do
-  #     assert Time.ratio(:kilohertz, :hertz) == 1_000
-  #     assert Time.ratio(:megahertz, :hertz) == 1_000_000
-  #     assert Time.ratio(:gigahertz, :hertz) == 1_000_000_000
-  #     assert Time.ratio(:megahertz, :kilohertz) == 1_000
-  #     assert Time.ratio(:gigahertz, :kilohertz) == 1_000_000
-  #     assert Time.ratio(:gigahertz, :megahertz) == 1_000
 
-  #     assert Time.ratio(:hertz, :hertz) == 1
-  #     assert Time.ratio(:kilohertz, :kilohertz) == 1
-  #     assert Time.ratio(:megahertz, :megahertz) == 1
-  #     assert Time.ratio(:gigahertz, :gigahertz) == 1
-  #   end
+  end
 
-  #   test "\"per second\" ie frequency" do
-  #     assert Time.ratio(:second, 10) == 10
-  #     assert Time.ratio(:millisecond, 10) == 0.01
-  #     assert Time.ratio(10, :second) == 0.1
-  #     assert Time.ratio(10, :millisecond) == 100
-  #   end
+  describe "dimension/1" do
+    test "provides the dimension of a time unit" do
+      assert Time.dimension(Time.second) == Dimension.new() |> Dimension.with_time(1)
+      assert Time.dimension(Time.millisecond) == Dimension.new() |> Dimension.with_time(1)
+      assert Time.dimension(Time.microsecond) == Dimension.new() |> Dimension.with_time(1)
+      assert Time.dimension(Time.nanosecond) == Dimension.new() |> Dimension.with_time(1)
 
-  #   test "\"per hertz\" ie period" do
-  #     assert Time.ratio(10, :hertz) == 10
-  #     assert Time.ratio(10, :kilohertz) == 0.01
-  #     assert Time.ratio(:hertz, 10) == 0.1
-  #     assert Time.ratio(:kilohertz, 10) == 100
-  #   end
-  # end
+      assert Time.dimension(1) == Dimension.new() |> Dimension.with_time(1)
+      assert Time.dimension(10) == Dimension.new() |> Dimension.with_time(1)
+      assert Time.dimension(100) == Dimension.new() |> Dimension.with_time(1)
+      assert Time.dimension(1000) == Dimension.new() |> Dimension.with_time(1)
+      
+      assert Time.dimension(Time.hertz) == Dimension.new() |> Dimension.with_time(-1)
+      assert Time.dimension(Time.kilohertz) == Dimension.new() |> Dimension.with_time(-1)
+      assert Time.dimension(Time.megahertz) == Dimension.new() |> Dimension.with_time(-1)
+      assert Time.dimension(Time.gigahertz) == Dimension.new() |> Dimension.with_time(-1)
+    end
+  end
+
+
+  describe "Time.new/2" do
+    test "supports Scale and Dimension as arguments to get second" do
+      {:ok, :second} = Time.new(Scale.new(), %Dimension{time: 1}) 
+      {:ok, :millisecond} = Time.new(Scale.new(-3), %Dimension{time: 1})
+      {:ok, :microsecond} = Time.new(Scale.new(-6), %Dimension{time: 1})
+      {:ok, :nanosecond} = Time.new(Scale.new(-9), %Dimension{time: 1})
+
+      {:error, convert, unit} = Time.new(Scale.new(7), %Dimension{time: 1}) 
+      assert unit == :second
+      assert convert.(42) == 420_000_000
+
+      {:error, convert, unit} = Time.new(Scale.new(-7), %Dimension{time: 1}) 
+      assert unit == :nanosecond
+      assert convert.(42) == 4200
+
+    end
+        test "supports Scale and Dimension as arguments to get hertz" do
+      {:ok, :hertz} = Time.new(Scale.new(), %Dimension{time: -1}) 
+      {:ok, :kilohertz} = Time.new(Scale.new(3), %Dimension{time: -1})
+      {:ok, :megahertz} = Time.new(Scale.new(6), %Dimension{time: -1})
+      {:ok, :gigahertz} = Time.new(Scale.new(9), %Dimension{time: -1})
+
+      {:error, convert, unit} = Time.new(Scale.new(7), %Dimension{time: -1}) 
+      assert unit == :megahertz
+      assert convert.(42) == 420
+
+      {:error, convert, unit} = Time.new(Scale.new(-7), %Dimension{time: -1}) 
+      assert unit == :hertz
+      assert convert.(42) == 0.0000042
+
+    end
+  end
+
 end

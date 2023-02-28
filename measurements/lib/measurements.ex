@@ -56,14 +56,14 @@ defmodule Measurements do
       }
 
   """
-  @spec with_error(t(), non_neg_integer, Unit.t()) :: t
-  def with_error(%__MODULE__{} = value, pos_int, unit) when value.unit == unit do
-    %{value | error: abs(pos_int)}
+  @spec with_error(t(), integer, Unit.t()) :: t
+  def with_error(%__MODULE__{} = value, err, unit) when value.unit == unit do
+    %{value | error: abs(err)}
   end
 
-  def with_error(%__MODULE__{} = value, pos_int, unit) do
+  def with_error(%__MODULE__{} = value, err, unit) do
     with {:ok, converter} <- Unit.convert(value.unit, unit) do
-      time(converter.(value.value), unit) |> with_error(pos_int, unit)
+      time(converter.(value.value), unit) |> with_error(err, unit)
     else
       {:error, reason} ->
         raise reason
