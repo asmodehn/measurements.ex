@@ -37,8 +37,7 @@ defmodule Measurements.MixProject do
 
   defp package() do
     [
-      files: ~w(lib priv .formatter.exs mix.exs README* readme* ../LICENSE*
-                ../license* CHANGELOG* changelog* src),
+      files: ~w(lib .formatter.exs mix.exs README* ../LICENSE*),
       licenses: ["GPL-3.0-or-later"],
       links: %{"GitHub" => "https://github.com/asmodehn/measurements.ex"}
     ]
