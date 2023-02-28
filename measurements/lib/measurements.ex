@@ -32,8 +32,13 @@ defmodule Measurements do
 
   """
   @spec time(integer, Unit.t()) :: t
-  def time(int, unit) do
-    %__MODULE__{value: int, unit: Unit.time(unit)}
+  def time(v, unit) do
+      # normalize the unit
+      with {:ok, nu } <- Unit.time(unit) do
+        %__MODULE__{value: v, unit: nu }
+      else
+        {:error, conversion, nu} -> %__MODULE__{value: conversion.(v), unit: nu }
+      end
   end
 
   @doc """
@@ -57,21 +62,14 @@ defmodule Measurements do
   end
 
   def with_error(%__MODULE__{} = value, pos_int, unit) do
-    with {:ok, converted} <- convert(value.value, value.unit, unit) do
-      time(converted, unit) |> with_error(pos_int, unit)
+    with {:ok, converter} <- Unit.convert(value.unit, unit) do
+      time(converter.(value.value), unit) |> with_error(pos_int, unit)
     else
-      {:error, same} ->
-        time(Unit.convert(same, unit), unit)
-        |> with_error(pos_int, unit)
+      {:error, reason} ->
+        raise reason
+        # time(Unit.convert(same, unit), unit)
+        # |> with_error(pos_int, unit)
     end
   end
 
-  defp convert(value, from_unit, to_unit) do
-    # TODO : move this to unit module ??
-    try do
-      {:ok, Unit.convert(from_unit, to_unit).(value)}
-    rescue
-      _ -> {:error, value}
-    end
-  end
 end
