@@ -4,10 +4,20 @@ defmodule Measurements.MixProject do
   def project do
     [
       app: :measurements,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+
+       # Docs
+    name: "Measurements",
+    source_url: "https://github.com/asmodehn/measurements.ex",
+    # homepage_url: "http://YOUR_PROJECT_HOMEPAGE",
+    docs: [
+      main: "Measurements", # The main page in the docs
+      # logo: "path/to/logo.png",
+      extras: ["README.md"]   # TODO: , "DEMO.livemd"]
+    ]
     ]
   end
 
@@ -21,6 +31,8 @@ defmodule Measurements.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:ex_doc, "~> 0.27", only: :dev, runtime: false},
+      # {:livebook, "~> 0.8.1", only: :dev, runtime: false}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]

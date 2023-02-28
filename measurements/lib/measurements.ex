@@ -1,7 +1,8 @@
 defmodule Measurements do
   @moduledoc """
   Documentation for `Measurements`.
-  A measurement, internally representted by an integer
+
+  A measurement is a quantity represented, by an integer, a unit and a (positive) error
   """
 
   alias Measurements.Unit
@@ -19,7 +20,7 @@ defmodule Measurements do
         }
 
   @doc """
-  Measurement.
+  Time Measurement.
 
   ## Examples
 
@@ -35,6 +36,21 @@ defmodule Measurements do
     %__MODULE__{value: int, unit: Unit.time(unit)}
   end
 
+  @doc """
+  Add error to a Measurement.
+  The error is symmetric and always represented by a positive number
+  The measurement unit is converted if needed to not loose precision.
+
+  ## Examples
+
+      iex> Measurements.time(42, :second) |> Measurements.with_error(-4, :millisecond)
+      %Measurements{
+        value: 42_000,
+        unit: :millisecond,
+        error: 4
+      }
+
+  """
   @spec with_error(t(), non_neg_integer, Unit.t()) :: t
   def with_error(%__MODULE__{} = value, pos_int, unit) when value.unit == unit do
     %{value | error: abs(pos_int)}
