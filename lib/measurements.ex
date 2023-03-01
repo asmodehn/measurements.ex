@@ -56,6 +56,56 @@ defmodule Measurements do
   end
 
   @doc """
+  Length Measurement.
+
+  ## Examples
+
+      iex> Measurements.length(42, :meter)
+      %Measurements{
+        value: 42,
+        unit: :meter
+      }
+
+  """
+  @spec length(integer, Unit.t()) :: t
+  def length(v, unit) do
+    # normalize the unit
+    case Unit.length(unit) do
+      {:ok, nu} ->
+        %__MODULE__{value: v, unit: nu}
+
+      {:error, conversion, nu} ->
+        %__MODULE__{value: conversion.(v), unit: nu}
+    end
+  end
+
+  @doc """
+  Generic Measurement. Unit indicates the dimension.
+
+  ## Examples
+
+      iex> Measurements.new(42, :meter)
+      %Measurements{
+        value: 42,
+        unit: :meter
+      }
+
+  """
+  @spec new(integer, Unit.t()) :: t
+  def new(v, unit) do
+    # normalize the unit
+    case Unit.new(unit) do
+      # TODO : while new/2 seems the more intuitive approach, 
+      # we need a way to pass unknown units to Unit.new/2 somehow...
+      {:ok, nu} ->
+        %__MODULE__{value: v, unit: nu}
+
+      {:error, conversion, nu} ->
+        %__MODULE__{value: conversion.(v), unit: nu}
+    end
+  end
+
+  @doc """
   Add error to a Measurement.
 
   The error is symmetric and always represented by a positive number.

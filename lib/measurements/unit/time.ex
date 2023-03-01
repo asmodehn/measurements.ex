@@ -1,4 +1,8 @@
 defmodule Measurements.Unit.Time do
+  @moduledoc """
+    `Measurements.Unit.Time` deals with time-related units.
+  """
+
   alias Measurements.Dimension
   alias Measurements.Scale
 
@@ -16,6 +20,21 @@ defmodule Measurements.Unit.Time do
   defmacro kilohertz, do: quote(do: :kilohertz)
   defmacro megahertz, do: quote(do: :megahertz)
   defmacro gigahertz, do: quote(do: :gigahertz)
+
+  @doc """
+  macro used for reflection at compile time : which units are defined in this module.
+  """
+  defmacro __units,
+    do: [
+      second(),
+      millisecond(),
+      microsecond(),
+      nanosecond(),
+      hertz(),
+      kilohertz(),
+      megahertz(),
+      gigahertz()
+    ]
 
   @type t :: atom | non_neg_integer
 
@@ -126,6 +145,18 @@ defmodule Measurements.Unit.Time do
         {:error, Scale.convert(s), hertz()}
     end
   end
+
+  @spec to_string(atom) :: String.t()
+  def to_string(unit) when is_atom(unit) do
+    case unit do
+      second() -> "s"
+      millisecond() -> "ms"
+      microsecond() -> "μs"
+      nanosecond() -> "ns"
+    end
+  end
+
+  def to_string(unit) when is_integer(unit), do: " @ #{unit} Hz"
 
   defp argument_error_message(other),
     do:

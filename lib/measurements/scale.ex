@@ -1,4 +1,8 @@
 defmodule Measurements.Scale do
+  @moduledoc """
+    `Measurements.Scale` deals with the scale of a unit and related conversion
+  """
+
   defstruct magnitude: 0,
             coefficient: 0
 

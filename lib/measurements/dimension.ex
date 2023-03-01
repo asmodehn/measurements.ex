@@ -1,4 +1,8 @@
 defmodule Measurements.Dimension do
+  @moduledoc """
+    `Measurements.Dimension` deals with the dimension of a unit and related conversion
+  """
+
   defstruct time: 0,
             length: 0,
             mass: 0,

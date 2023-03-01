@@ -7,6 +7,20 @@ defmodule Measurements.Unit.TimeTest do
   alias Measurements.Dimension
   alias Measurements.Scale
 
+  describe "__units/0" do
+    test "list units available in this module" do
+      assert :second in Time.__units()
+      assert :millisecond in Time.__units()
+      assert :microsecond in Time.__units()
+      assert :nanosecond in Time.__units()
+
+      assert :hertz in Time.__units()
+      assert :kilohertz in Time.__units()
+      assert :megahertz in Time.__units()
+      assert :gigahertz in Time.__units()
+    end
+  end
+
   describe "scale/1" do
     test "provide the scale of a time unit" do
       assert Time.scale(Time.second()) == Scale.new(0)
@@ -19,9 +33,9 @@ defmodule Measurements.Unit.TimeTest do
       assert Time.scale(100) == Scale.new(-2)
       assert Time.scale(1000) == Scale.new(-3)
 
-      # TODO
-      # assert Time.scale(60) == Scale.new()
+      assert Time.scale(60) == Scale.new(-1, 6)
 
+      # inverse dimension -> inverse scale !
       assert Time.scale(Time.hertz()) == Scale.new(0)
       assert Time.scale(Time.kilohertz()) == Scale.new(3)
       assert Time.scale(Time.megahertz()) == Scale.new(6)
@@ -48,7 +62,7 @@ defmodule Measurements.Unit.TimeTest do
     end
   end
 
-  describe "Time.new/2" do
+  describe "new/2" do
     test "supports Scale and Dimension as arguments to get second" do
       {:ok, :second} = Time.new(Scale.new(), %Dimension{time: 1})
       {:ok, :millisecond} = Time.new(Scale.new(-3), %Dimension{time: 1})
@@ -77,6 +91,15 @@ defmodule Measurements.Unit.TimeTest do
       {:error, convert, unit} = Time.new(Scale.new(-7), %Dimension{time: -1})
       assert unit == :hertz
       assert convert.(42) == 0.0000042
+    end
+  end
+
+  describe "to_string/1" do
+    test "provides a string identifier for the time unit" do
+      assert Time.to_string(:second) == "s"
+      assert Time.to_string(:millisecond) == "ms"
+      assert Time.to_string(:microsecond) == "μs"
+      assert Time.to_string(:nanosecond) == "ns"
     end
   end
 end

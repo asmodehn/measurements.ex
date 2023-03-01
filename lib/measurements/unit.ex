@@ -30,7 +30,11 @@ defmodule Measurements.Unit do
   """
   require System
 
+  require Measurements.Unit.Time
+  require Measurements.Unit.Length
+
   alias Measurements.Unit.Time
+  alias Measurements.Unit.Length
   alias Measurements.Scale
 
   @typedoc "Unit Type"
@@ -39,7 +43,7 @@ defmodule Measurements.Unit do
   @type value :: integer()
 
   @doc """
-  Normalizes a known unit
+  Normalizes a known time unit
   """
   @spec time(atom) :: {:ok, t} | {:error, (value -> value), t}
   @spec time(atom, integer) :: {:ok, t} | {:error, (value -> value), t}
@@ -51,7 +55,53 @@ defmodule Measurements.Unit do
   end
 
   @doc """
-  Conversion algorithm from a unit to another
+  Normalizes a known length unit
+  """
+  @spec length(atom) :: {:ok, t} | {:error, (value -> value), t}
+  @spec length(atom, integer) :: {:ok, t} | {:error, (value -> value), t}
+  def length(unit, power_ten_scale \\ 0) do
+    Length.new(
+      Scale.prod(Scale.new(power_ten_scale), Length.scale(unit)),
+      Length.dimension(unit)
+    )
+  end
+
+  @doc """
+  Returns the module where this unit is defined.
+
+  Indicates which implementation to call for normalization, conversion, etc.
+  """
+  @spec module(atom) :: atom
+  def module(unit) do
+    cond do
+      unit in Time.__units() -> {:ok, Time}
+      unit in Length.__units() -> {:ok, Length}
+      true -> {:error, :unit_module_not_found}
+    end
+  end
+
+  @doc """
+  Normalizes a known unit, of any dimension
+  """
+  @spec new(atom) :: {:ok, t} | {:error, (value -> value), t}
+  @spec new(atom, integer) :: {:ok, t} | {:error, (value -> value), t}
+  def new(unit, power_ten_scale \\ 0) do
+    {:ok, unit_module} = module(unit)
+
+    unit_module.new(
+      Scale.prod(Scale.new(power_ten_scale), unit_module.scale(unit)),
+      unit_module.dimension(unit)
+    )
+  end
+
+  # TODO : this usage is a bit confusing. we should probably
+  # -> remove the power_ten_scale, more confusing than useful
+  # -> allow unit creation, passing a scale (relative to base unit) and a dimension, somehow...
+
+  @doc """
+  Conversion algorithm from a unit to another.
+
+  Will find out which dimension the unnit belongs to, and if a conversion is possible.
   """
   @spec convert(t, t) :: {:ok, (value -> value)} | {:error, String.t()}
   def convert(from_unit, to_unit) when from_unit == to_unit do
@@ -59,8 +109,10 @@ defmodule Measurements.Unit do
   end
 
   def convert(from_unit, to_unit) do
-    if Time.dimension(from_unit) == Time.dimension(to_unit) do
-      {:ok, Scale.convert(Scale.ratio(Time.scale(from_unit), Time.scale(to_unit)))}
+    {:ok, unit_module} = module(from_unit)
+
+    if unit_module.dimension(from_unit) == unit_module.dimension(to_unit) do
+      {:ok, Scale.convert(Scale.ratio(unit_module.scale(from_unit), unit_module.scale(to_unit)))}
     else
       {:error, :not_yet_implemented}
     end
@@ -72,8 +124,10 @@ defmodule Measurements.Unit do
   """
   @spec min(t, t) :: t
   def min(u1, u2) do
-    if Time.dimension(u1) == Time.dimension(u2) do
-      {:ok, if(Time.scale(u1) <= Time.scale(u2), do: u1, else: u2)}
+    {:ok, unit_module} = module(u1)
+
+    if unit_module.dimension(u1) == unit_module.dimension(u2) do
+      {:ok, if(unit_module.scale(u1) <= unit_module.scale(u2), do: u1, else: u2)}
     else
       {:error, :incompatible_dimension}
     end
@@ -85,22 +139,18 @@ defmodule Measurements.Unit do
   """
   @spec max(t, t) :: t
   def max(u1, u2) do
-    if Time.dimension(u1) == Time.dimension(u2) do
-      {:ok, if(Time.scale(u1) >= Time.scale(u2), do: u1, else: u2)}
+    {:ok, unit_module} = module(u1)
+
+    if unit_module.dimension(u1) == unit_module.dimension(u2) do
+      {:ok, if(unit_module.scale(u1) >= unit_module.scale(u2), do: u1, else: u2)}
     else
       {:error, :incompatible_dimension}
     end
   end
 
   @spec to_string(atom) :: String.t()
-  def to_string(unit) when is_atom(unit) do
-    case unit do
-      :second -> "s"
-      :millisecond -> "ms"
-      :microsecond -> "μs"
-      :nanosecond -> "ns"
-    end
+  def to_string(unit) do
+    {:ok, unit_module} = module(unit)
+    unit_module.to_string(unit)
   end
-
-  def to_string(unit) when is_integer(unit), do: " @ #{unit} Hz"
 end
