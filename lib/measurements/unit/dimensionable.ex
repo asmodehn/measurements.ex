@@ -1,5 +1,3 @@
-   defmodule Measurements.Unit.Dimensionable do
-   	
-   		@callback dimension(atom()) :: Measurements.Dimension.t
-
-   end
+defmodule Measurements.Unit.Dimensionable do
+  @callback dimension(atom()) :: Measurements.Dimension.t()
+end
