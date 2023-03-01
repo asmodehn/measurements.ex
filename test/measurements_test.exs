@@ -88,4 +88,23 @@ defmodule MeasurementsTest do
              }
     end
   end
+
+  describe "scale/2" do
+    test "scale a measurement by an integer" do
+      assert Measurements.time(42, :second) |> Measurements.scale(10) == %Measurements{
+               value: 420,
+               unit: :second
+             }
+    end
+
+    test "scale a measurement with the associated error" do
+      assert Measurements.time(42, :second)
+             |> Measurements.with_error(3, :millisecond)
+             |> Measurements.scale(10) == %Measurements{
+               value: 420_000,
+               unit: :millisecond,
+               error: 30
+             }
+    end
+  end
 end

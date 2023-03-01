@@ -106,7 +106,7 @@ defmodule Measurements do
   end
 
   @doc """
-   The sum of multiple measurements.
+   The sum of multiple measurements with implicit unit conversion.
    Only measurements with the same unit dimension will work.
    Error will be propagated.
   """
@@ -118,5 +118,13 @@ defmodule Measurements do
     m1 = best_convert(m1, m2.unit)
     m2 = best_convert(m2, m1.unit)
     sum(m1, m2)
+  end
+
+  @doc """
+   scaling a measurement by a number (without unit conversion)
+   Error will be scaled by the same number (but remains positive).
+  """
+  def scale(%__MODULE__{} = m1, n) when is_integer(n) do
+    %{m1 | value: m1.value * n, error: abs(m1.error * n)}
   end
 end
