@@ -1,4 +1,33 @@
 defmodule Measurements.Unit do
+  @moduledoc """
+  Documentation for `Measurements.Unit`.
+
+  A unit is represented by an atom. Ref: https://en.wikipedia.org/wiki/International_System_of_Units
+
+  There exist multiple submodules defining the various units:
+  - `Time`
+  - TODO !!
+
+  Internally, a unit relies on `Scale` and `Dimension` to determine:
+  - which conversion is allowed or not.
+  - which unit is better suited to a value.
+
+  But a user does not need to know about it, it will be managed automatically, to minimize loss of precision,
+  and keep the Measurement value in the integer range as much as possible.
+
+  ## Examples
+
+      iex> Measurements.Unit.time(:second)
+      {:ok, :second}
+
+      iex> Measurements.Unit.min(:second, :nanosecond)
+      {:ok, :nanosecond}
+
+      iex> {:ok, converter} = Measurements.Unit.convert(:second, :millisecond)
+      iex> converter.(42)
+      42_000
+
+  """
   require System
 
   alias Measurements.Unit.Time
