@@ -33,12 +33,14 @@ defmodule Measurements do
   """
   @spec time(integer, Unit.t()) :: t
   def time(v, unit) do
-      # normalize the unit
-      with {:ok, nu } <- Unit.time(unit) do
-        %__MODULE__{value: v, unit: nu }
-      else
-        {:error, conversion, nu} -> %__MODULE__{value: conversion.(v), unit: nu }
-      end
+    # normalize the unit
+    case Unit.time(unit) do
+      {:ok, nu} ->
+        %__MODULE__{value: v, unit: nu}
+
+      {:error, conversion, nu} ->
+        %__MODULE__{value: conversion.(v), unit: nu}
+    end
   end
 
   @doc """
@@ -62,9 +64,14 @@ defmodule Measurements do
   end
 
   def with_error(%__MODULE__{} = value, err, unit) do
-    with {:ok, converter} <- Unit.convert(value.unit, unit) do
-      time(converter.(value.value), unit) |> with_error(err, unit)
-    else
+    case Unit.convert(value.unit, unit) do
+      {:ok, converter} ->
+        %__MODULE__{
+          value: converter.(value.value),
+          unit: unit
+        }
+        |> with_error(err, unit)
+
       {:error, reason} ->
         raise reason
         # time(Unit.convert(same, unit), unit)
@@ -72,10 +79,44 @@ defmodule Measurements do
     end
   end
 
+  @doc """
+  Convert the measurement to the unit, only if it is suitable (unit is more precise).
+  Otherwise, the original measurement is returned.
+  """
+  @spec best_convert(t, Unit.t()) :: t
 
-# TODO : sum , product, etc.
+  def best_convert(%__MODULE__{unit: u} = m, unit) when u == unit, do: m
 
+  def best_convert(%__MODULE__{} = m, unit) do
+    case Unit.min(m.unit, unit) do
+      {:ok, min_unit} ->
+        # if Unit.min is successful, conversion will always work.
+        {:ok, converter} = Unit.convert(m.unit, min_unit)
 
+        %__MODULE__{
+          value: converter.(m.value),
+          unit: min_unit,
+          error: converter.(m.error)
+        }
 
+      # no conversion possible, just ignore it
+      {:error, :incompatible_dimension} ->
+        m
+    end
+  end
 
+  @doc """
+   The sum of multiple measurements.
+   Only measurements with the same unit dimension will work.
+   Error will be propagated.
+  """
+  def sum(%__MODULE__{} = m1, %__MODULE__{} = m2) when m1.unit == m2.unit do
+    %{m1 | value: m1.value + m2.value, error: m1.error + m2.error}
+  end
+
+  def sum(%__MODULE__{} = m1, %__MODULE__{} = m2) do
+    m1 = best_convert(m1, m2.unit)
+    m2 = best_convert(m2, m1.unit)
+    sum(m1, m2)
+  end
 end

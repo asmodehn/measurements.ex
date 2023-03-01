@@ -17,15 +17,6 @@ Dimensions supported:
 - [ ] Amount of Substance (N)
 - [ ] Luminous Intensity (J)
 
-## Testing in Iex
-
-TODO : iex
-
-## Testing in Livebook
-
-
-TODO: livebook
-
 
 ## Installation
 
@@ -44,3 +35,36 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/measurements>.
 
+
+## Testing in Iex
+
+```
+$ iex -S mix
+```
+
+## Testing in Livebook
+
+[Install livebook as an escript](https://github.com/livebook-dev/livebook#escript) and start it
+
+```
+livebook server
+```
+
+From there you can open DEMO.livemd to see `measurements` in action.
+
+## How to develop
+
+Optionally, setup [direnv](https://direnv.net/) with [asdf](https://github.com/asdf-vm/asdf). 
+This will allow to work with another elixir version than your system's one.
+
+Then:
+- install it
+- run the tests
+- check the livebook
+- browse the docs
+- peek into the code
+
+Want to add something ?
+  - Make it work
+  - Make it beautiful
+  - Make it fast

@@ -35,7 +35,6 @@ defmodule Measurements.Scale do
       magnitude: s1.magnitude - s2.magnitude,
       coefficient: s1.coefficient / s2.coefficient
     }
-    |> IO.inspect()
   end
 
   def convert(%__MODULE__{} = scale) do
