@@ -64,26 +64,30 @@ defmodule Measurements.Unit.Time do
         substance: 0,
         lintensity: 0
       }) do
-    case s.magnitude do
-      0 ->
-        {:ok, second()}
-
-      -3 ->
-        {:ok, millisecond()}
-
-      -6 ->
-        {:ok, microsecond()}
-
-      -9 ->
+    cond do
+      s.magnitude == -9 ->
         {:ok, nanosecond()}
 
-      m ->
-        cond do
-          m < -6 -> {:error, Scale.convert(%{s | magnitude: s.magnitude + 9}), nanosecond()}
-          m < -3 -> {:error, Scale.convert(%{s | magnitude: s.magnitude + 6}), microsecond()}
-          m < 0 -> {:error, Scale.convert(%{s | magnitude: s.magnitude + 3}), millisecond()}
-          true -> {:error, Scale.convert(s), second()}
-        end
+      s.magnitude < -6 ->
+        {:error, Scale.convert(%{s | magnitude: s.magnitude + 9}), nanosecond()}
+
+      s.magnitude == -6 ->
+        {:ok, microsecond()}
+
+      s.magnitude < -3 ->
+        {:error, Scale.convert(%{s | magnitude: s.magnitude + 6}), microsecond()}
+
+      s.magnitude == -3 ->
+        {:ok, millisecond()}
+
+      s.magnitude < 0 ->
+        {:error, Scale.convert(%{s | magnitude: s.magnitude + 3}), millisecond()}
+
+      s.magnitude == 0 ->
+        {:ok, second()}
+
+      true ->
+        {:error, Scale.convert(s), second()}
     end
   end
 
@@ -96,26 +100,30 @@ defmodule Measurements.Unit.Time do
         substance: 0,
         lintensity: 0
       }) do
-    case s.magnitude do
-      0 ->
-        {:ok, hertz()}
+    cond do
+      s.magnitude > 9 ->
+        {:error, Scale.convert(%{s | magnitude: s.magnitude - 9}), gigahertz()}
 
-      3 ->
-        {:ok, kilohertz()}
-
-      6 ->
-        {:ok, megahertz()}
-
-      9 ->
+      s.magnitude == 9 ->
         {:ok, gigahertz()}
 
-      m ->
-        cond do
-          m > 9 -> {:error, Scale.convert(%{s | magnitude: s.magnitude - 9}), gigahertz()}
-          m > 6 -> {:error, Scale.convert(%{s | magnitude: s.magnitude - 6}), megahertz()}
-          m > 3 -> {:error, Scale.convert(%{s | magnitude: s.magnitude - 3}), kilohertz()}
-          true -> {:error, Scale.convert(s), hertz()}
-        end
+      s.magnitude > 6 ->
+        {:error, Scale.convert(%{s | magnitude: s.magnitude - 6}), megahertz()}
+
+      s.magnitude == 6 ->
+        {:ok, megahertz()}
+
+      s.magnitude > 3 ->
+        {:error, Scale.convert(%{s | magnitude: s.magnitude - 3}), kilohertz()}
+
+      s.magnitude == 3 ->
+        {:ok, kilohertz()}
+
+      s.magnitude == 0 ->
+        {:ok, hertz()}
+
+      true ->
+        {:error, Scale.convert(s), hertz()}
     end
   end
 
