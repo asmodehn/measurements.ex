@@ -107,4 +107,18 @@ defmodule MeasurementsTest do
              }
     end
   end
+
+  describe "String.Chars protocol" do
+    test "provides nice output in string" do
+      assert "#{Measurements.time(42, :second)}" == "42 s"
+    end
+
+    test "provides nice output with error in string" do
+      m =
+        Measurements.time(42, :millisecond)
+        |> Measurements.with_error(35, :microsecond)
+
+      assert "#{m}" == "42000 ±35 μs"
+    end
+  end
 end

@@ -91,4 +91,16 @@ defmodule Measurements.Unit do
       {:error, :incompatible_dimension}
     end
   end
+
+  @spec to_string(atom) :: String.t()
+  def to_string(unit) when is_atom(unit) do
+    case unit do
+      :second -> "s"
+      :millisecond -> "ms"
+      :microsecond -> "μs"
+      :nanosecond -> "ns"
+    end
+  end
+
+  def to_string(unit) when is_integer(unit), do: " @ #{unit} Hz"
 end

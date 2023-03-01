@@ -99,7 +99,7 @@ defmodule Measurements do
   Then it will convert the measurement to the chosen unit.
 
   If no conversion is possible, the original measurement is returned.
-  
+
   ## Examples
 
       iex> Measurements.time(42, :second) |> Measurements.with_error(1, :second) |> Measurements.best_convert(:millisecond)
@@ -178,5 +178,27 @@ defmodule Measurements do
   """
   def scale(%__MODULE__{} = m1, n) when is_integer(n) do
     %{m1 | value: m1.value * n, error: abs(m1.error * n)}
+  end
+end
+
+defimpl String.Chars, for: Measurements do
+  def to_string(%Measurements{
+        value: v,
+        unit: unit,
+        error: 0
+      }) do
+    u = Measurements.Unit.to_string(unit)
+
+    "#{v} #{u}"
+  end
+
+  def to_string(%Measurements{
+        value: v,
+        unit: unit,
+        error: err
+      }) do
+    u = Measurements.Unit.to_string(unit)
+
+    "#{v} ±#{err} #{u}"
   end
 end
