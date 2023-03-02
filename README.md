@@ -10,7 +10,7 @@ See https://en.wikipedia.org/wiki/Dimensional_analysis as reference.
 
 Dimensions supported:
 - [X] Time (T)
-- [ ] Length (L)
+- [X] Length (L)
 - [ ] Mass (M)
 - [ ] Electric Current (I)
 - [ ] Absolute Temperature (Θ)
@@ -26,7 +26,7 @@ by adding `measurements` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:measurements, "~> 0.1.1"}
+    {:measurements, "~> 0.1.2"}
   ]
 end
 ```
@@ -44,13 +44,13 @@ $ iex -S mix
 
 ## Testing in Livebook
 
-[Install livebook as an escript](https://github.com/livebook-dev/livebook#escript) and start it
+[Install livebook as an escript](https://github.com/livebook-dev/livebook#escript) and start it:
 
 ```
 livebook server
 ```
 
-From there you can open DEMO.livemd to see `measurements` in action.
+From there you can open DEMO.livemd to see `measurements` in action, and try it for yourself !
 
 ## How to develop
 
@@ -64,7 +64,10 @@ Then:
 - browse the docs
 - peek into the code
 
-Want to add something ?
+Want to change something ?
+  - open an issue to discuss
   - Make it work
+  - open a PR to show off the work
   - Make it beautiful
+  - Let's merge it! 
   - Make it fast

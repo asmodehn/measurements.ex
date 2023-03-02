@@ -110,6 +110,33 @@ defmodule Measurements.Unit do
   end
 
   @doc """
+  The dimension of the unit
+  """
+  @spec dimension(atom) :: {:ok, Dimension.t()} | {:error, term}
+  def dimension(unit) do
+    case module(unit) do
+      {:ok, unit_module} ->
+        {:ok, unit_module.dimension(unit)}
+
+      {:error, what} ->
+        raise what
+    end
+  end
+
+  @doc """
+  """
+  @spec scale(atom) :: {:ok, Scale.t()} | {:error, term}
+  def scale(unit) do
+    case module(unit) do
+      {:ok, unit_module} ->
+        {:ok, unit_module.scale(unit)}
+
+      {:error, what} ->
+        raise what
+    end
+  end
+
+  @doc """
   Conversion algorithm from a unit to another.
 
   Will find out which dimension the unnit belongs to, and if a conversion is possible.
@@ -120,12 +147,16 @@ defmodule Measurements.Unit do
   end
 
   def convert(from_unit, to_unit) do
-    {:ok, unit_module} = module(from_unit)
+    {:ok, target_dim} = dimension(to_unit)
 
-    if unit_module.dimension(from_unit) == unit_module.dimension(to_unit) do
-      {:ok, Scale.convert(Scale.ratio(unit_module.scale(from_unit), unit_module.scale(to_unit)))}
-    else
-      {:error, :not_yet_implemented}
+    case dimension(from_unit) do
+      {:ok, ^target_dim} ->
+        {:ok, from} = scale(from_unit)
+        {:ok, to} = scale(to_unit)
+        {:ok, Scale.convert(Scale.ratio(from, to))}
+
+      {:error, what} ->
+        {:error, what}
     end
   end
 
@@ -135,12 +166,16 @@ defmodule Measurements.Unit do
   """
   @spec min(t, t) :: t
   def min(u1, u2) do
-    {:ok, unit_module} = module(u1)
+    {:ok, dim2} = dimension(u2)
 
-    if unit_module.dimension(u1) == unit_module.dimension(u2) do
-      {:ok, if(unit_module.scale(u1) <= unit_module.scale(u2), do: u1, else: u2)}
-    else
-      {:error, :incompatible_dimension}
+    case dimension(u1) do
+      {:ok, ^dim2} ->
+        {:ok, s1} = scale(u1)
+        {:ok, s2} = scale(u2)
+        {:ok, if(s1 < s2, do: u1, else: u2)}
+
+      {:error, what} ->
+        {:error, what}
     end
   end
 
@@ -150,12 +185,16 @@ defmodule Measurements.Unit do
   """
   @spec max(t, t) :: t
   def max(u1, u2) do
-    {:ok, unit_module} = module(u1)
+    {:ok, dim2} = dimension(u2)
 
-    if unit_module.dimension(u1) == unit_module.dimension(u2) do
-      {:ok, if(unit_module.scale(u1) >= unit_module.scale(u2), do: u1, else: u2)}
-    else
-      {:error, :incompatible_dimension}
+    case dimension(u1) do
+      {:ok, ^dim2} ->
+        {:ok, s1} = scale(u1)
+        {:ok, s2} = scale(u2)
+        {:ok, if(s1 >= s2, do: u1, else: u2)}
+
+      {:error, what} ->
+        {:error, what}
     end
   end
 
