@@ -1,5 +1,8 @@
 # Measurements
 
+
+[![Build Status](https://github.com/asmodehn/measurements.ex/workflows/elixir/badge.svg?branch=main)](https://github.com/asmodehn/measurements.ex/actions) [![Hex pm](https://img.shields.io/hexpm/v/measurements.svg?style=flat)](https://hex.pm/packages/measurements) [![Hexdocs.pm](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/measurements/)
+
 Measurements is a library for computation of **physical quantities** (time, distances, etc.) in Elixir.
 
 A quantity is represented by **a struct with a value, a unit and a positive error**.
