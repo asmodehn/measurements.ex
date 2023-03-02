@@ -1,0 +1,150 @@
+# Demo
+
+```elixir
+Mix.install([
+  {:measurements, path: "."},
+  {:vega_lite, "~> 0.1.6"},
+  {:kino_vega_lite, "~> 0.1.7"}
+])
+
+alias VegaLite, as: Vl
+```
+
+## Introduction
+
+`measurements` is a package helping with manipulation of real physics quantities.
+
+## Usage
+
+A measurement is just a struct that can be easily created like so:
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Measurements.new(4, :kilometer)
+```
+
+If desired, an associated error can be added onto that measurement
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Measurements.new(300, :second) |> Measurements.add_error(4, :millisecond)
+```
+
+A measurement can be converted to another unit of the same dimension
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Measurements.new(300, :second, 5) |> Measurements.best_convert(:microsecond)
+```
+
+The best unit is chosen to avoid loosing precision. If the target unit is not better than the current one, the conversion is simply ignored.
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Measurements.new(300, :millisecond, 5) |> Measurements.best_convert(:second)
+```
+
+This allows to operate on measurements without knowing their precision, but remaining confident no precision in lost in various computations.
+
+## Arithmetic
+
+### Addition
+
+`Measurements` support addition with automated conversion, provided the unit dimension matches.
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+m1 = Measurements.new(4, :millimeter)
+m2 = Measurements.new(543, :micrometer, 2)
+
+Measurements.sum(m1, m2)
+```
+
+Otherwise an explicit error with clean measurement representation is displayed:
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+m1 = Measurements.new(4, :second) |> Measurements.add_error(5, :millisecond)
+m2 = Measurements.new(543, :micrometer)
+Measurements.sum(m1, m2)
+```
+
+### Scaling
+
+Scaling the `Measurement` by a constant is also supported. Note the scale also applies to the error.
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+m1 = Measurements.new(4, :second) |> Measurements.add_error(5, :millisecond)
+Measurements.scale(m1, 60)
+```
+
+### Difference
+
+Therefore difference of two measurements with unit of same dimension is also supported.
+
+A more convenient `delta/2` function is provided for this purpose.
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+m1 = Measurements.new(4, :millimeter)
+m2 = Measurements.new(543, :micrometer, 2)
+
+Measurements.delta(m1, m2)
+```
+
+### Ratio
+
+The ratio of two measurement is also supported.
+
+The result will be a measurement, with its unit adjusted.
+Therefore the `nil` Unit is just a constant, with potentially an error...
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+m1 = Measurements.new(4, :millimeter)
+m2 = Measurements.new(543, :micrometer, 2)
+Measurements.ratio(m1, m2)
+```
+
+We can verify this result, and maybe get an exact match, even if the value is a float:
+
+```elixir
+[
+  Measurements.ratio(m1, m2).value * 0.543 == 4,
+  # relative error recovery is a bit more involved.
+  # Refer to Error propagation theory when in doubt (TODO link?)
+  Measurements.ratio(m1, m2).error * 543 / 2 == Measurements.ratio(m1, m2).value
+]
+```
+
+### TODO : Product
+
+This will require more involved unit dimension manipulation...
+
+## Discrete Calculus
+
+With the capabilities in Measurements so far, we can already implement some basic discrete calculus on physical quantities.
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Local Discrete Derivative
+
+TODO
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Local Discrete Integral
+
+TODO
+
+## Iterative Control

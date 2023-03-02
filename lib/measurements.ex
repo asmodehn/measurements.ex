@@ -17,6 +17,9 @@ defmodule Measurements do
       }
   """
 
+  ## only for now, for ratio...
+  require Measurements.Scale
+
   alias Measurements.Unit
 
   @enforce_keys [:value, :unit]
@@ -276,25 +279,77 @@ defmodule Measurements do
     end
   end
 
-  defimpl String.Chars, for: Measurements do
-    def to_string(%Measurements{
-          value: v,
-          unit: unit,
-          error: 0
-        }) do
-      u = Measurements.Unit.to_string(unit)
+  @doc """
+  The ratio of two measurements, with implicit unit conversion.
 
-      "#{v} #{u}"
+  Only measurements with the same unit dimension will work, currently.
+  Error will be propagated (ie relatively compounded) as an int if possible.
+
+  ## Examples
+
+      iex>  m1 = Measurements.time(300, :second) |> Measurements.add_error(1, :second)
+      iex>  m2 = Measurements.time(60_000, :millisecond) |> Measurements.add_error(3, :millisecond)
+      iex> Measurements.ratio(m1, m2)
+      %Measurements{
+        value: 5,
+        unit: nil,
+        error: 0.01691666666666667
+      }
+
+  """
+  def ratio(%__MODULE__{} = m1, %__MODULE__{} = m2) when m1.unit == m2.unit do
+    # note: relative error is computed as float temporarily (quotient is supposed to always be small)
+    # For error we rely on float precision. Other approximations are already made in Error propagation theory anyway.
+    m1_rel_err = m1.error / m1.value
+    m2_rel_err = m2.error / m2.value
+
+    value =
+      if rem(m1.value, m2.value) == 0 do
+        div(m1.value, m2.value)
+      else
+        m1.value / m2.value
+      end
+
+    error = abs(value * (m1_rel_err + m2_rel_err))
+
+    # TODO : unit conversion via ratio...
+    # TODO : maybe unit is still there, but only with a scale ??
+    # TMP: force to scale 0 if unit is nil -> constant
+    %__MODULE__{value: value, unit: nil, error: error}
+  end
+
+  def ratio(%__MODULE__{} = m1, %__MODULE__{} = m2) do
+    if Unit.dimension(m1.unit) == Unit.dimension(m2.unit) do
+      m1 = best_convert(m1, m2.unit)
+      m2 = best_convert(m2, m1.unit)
+      ratio(m1, m2)
+    else
+      raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
     end
+  end
 
-    def to_string(%Measurements{
-          value: v,
-          unit: unit,
-          error: err
-        }) do
-      u = Measurements.Unit.to_string(unit)
+  # TODO : ratio of different units, with adjustment of dimension
+  # TODO : product with increase of dimension
+end
 
-      "#{v} ±#{err} #{u}"
-    end
+defimpl String.Chars, for: Measurements do
+  def to_string(%Measurements{
+        value: v,
+        unit: unit,
+        error: 0
+      }) do
+    u = Measurements.Unit.to_string(unit)
+
+    "#{v} #{u}"
+  end
+
+  def to_string(%Measurements{
+        value: v,
+        unit: unit,
+        error: err
+      }) do
+    u = Measurements.Unit.to_string(unit)
+
+    "#{v} ±#{err} #{u}"
   end
 end

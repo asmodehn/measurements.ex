@@ -214,6 +214,45 @@ defmodule MeasurementsTest do
     end
   end
 
+  describe "ratio/2" do
+    test "compute the ratio of two measurements of same dimension" do
+      assert Measurements.time(300, :second)
+             |> Measurements.ratio(Measurements.time(60, :second)) == %Measurements{
+               value: 5,
+               unit: nil
+             }
+    end
+
+    test "compute the ratio of two measurements with error propagation" do
+      assert Measurements.time(300, :second)
+             |> Measurements.add_error(3, :second)
+             |> Measurements.ratio(Measurements.time(60, :second)) == %Measurements{
+               value: 5,
+               unit: nil,
+               # CAREFUL : error is relative to the value
+               error: 5 * 3 / 300
+             }
+    end
+
+    test "compute the ratio of two measurements with conversion to best unit" do
+      assert Measurements.time(300, :second)
+             |> Measurements.add_error(3, :millisecond)
+             |> Measurements.ratio(Measurements.time(60, :second)) == %Measurements{
+               value: 5,
+               unit: nil,
+               # CAREFUL with scale here !
+               error: 5 * 3 / 300_000
+             }
+    end
+
+    test "prevent computing the ratio of of two measurements of units with different dimension" do
+      assert_raise(ArgumentError, fn ->
+        Measurements.time(42, :second)
+        |> Measurements.ratio(Measurements.length(51, :meter))
+      end)
+    end
+  end
+
   describe "String.Chars protocol" do
     test "provides nice output in string" do
       assert "#{Measurements.time(42, :second)}" == "42 s"
