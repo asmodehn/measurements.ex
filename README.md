@@ -1,10 +1,14 @@
 # Measurements
 
-Measurements is a library for computation of physical quantities (time, distances, etc.) in Elixir
-A quantity is represented by a struct with a value, a unit and an error.
+Measurements is a library for computation of **physical quantities** (time, distances, etc.) in Elixir.
+
+A quantity is represented by **a struct with a value, a unit and a positive error**.
 
 Error is propagated through calculations, and unit prevent collision of unrelated quantities.
-Automatic conversion of unit is supported.
+Automatic conversion of unit (in scale) is supported.
+
+Conversion of unit, across dimension, could ultimately be supported.
+But is a very large endaevour and the package API is not stable enough just yet.
 
 See https://en.wikipedia.org/wiki/Dimensional_analysis as reference.
 
@@ -39,6 +43,12 @@ be found at <https://hexdocs.pm/measurements>.
 ## Testing in Iex
 
 ```
+$ mix test --trace
+```
+
+Or for a more interactive approach:
+
+```
 $ iex -S mix
 ```
 
@@ -52,22 +62,23 @@ livebook server
 
 From there you can open DEMO.livemd to see `measurements` in action, and try it for yourself !
 
+
 ## How to develop
 
 Optionally, setup [direnv](https://direnv.net/) with [asdf](https://github.com/asdf-vm/asdf). 
 This will allow to work with another elixir version than your system's one.
 
 Then:
-- install it
-- run the tests
-- check the livebook
-- browse the docs
-- peek into the code
+- [install it](#installation)
+- [run the tests](#testing-in-iex)
+- [check the livebook](#testing-in-livebook)
+- [browse the docs](https://hexdocs.pm/measurements)
+- [have a look at the code](https://github.com/asmodehn/measurements.ex)
 
 Want to change something ?
-  - open an issue to discuss
+  - [open an issue to discuss](https://github.com/asmodehn/measurements.ex/issues)
   - Make it work
-  - open a PR to show off the work
+  - [open a PR to show off the work](https://github.com/asmodehn/measurements.ex/pulls)
   - Make it beautiful
   - Let's merge it! 
   - Make it fast

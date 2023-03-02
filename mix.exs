@@ -17,10 +17,9 @@ defmodule Measurements.MixProject do
       # homepage_url: "http://YOUR_PROJECT_HOMEPAGE",
       docs: [
         # The main page in the docs
-        main: "Measurements",
+        main: "readme",
         # logo: "path/to/logo.png",
-        # TODO: , "DEMO.livemd"]
-        extras: ["README.md"]
+        extras: ["README.md", "DEMO.livemd"]
       ]
     ]
   end
@@ -39,7 +38,7 @@ defmodule Measurements.MixProject do
 
   defp package() do
     [
-      files: ~w(lib .formatter.exs mix.exs README* ../LICENSE*),
+      files: ~w(lib .formatter.exs mix.exs README* DEMO* ../LICENSE*),
       licenses: ["GPL-3.0-or-later"],
       links: %{"GitHub" => "https://github.com/asmodehn/measurements.ex"}
     ]
