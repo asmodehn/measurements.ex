@@ -4,7 +4,7 @@ defmodule Measurements.MixProject do
   def project do
     [
       app: :measurements,
-      version: "0.1.2",
+      version: "0.1.3",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -38,7 +38,7 @@ defmodule Measurements.MixProject do
 
   defp package() do
     [
-      files: ~w(lib .formatter.exs mix.exs README* DEMO* ../LICENSE*),
+      files: ~w(lib .formatter.exs mix.exs README* DEMO* LICENSE*),
       licenses: ["GPL-3.0-or-later"],
       links: %{"GitHub" => "https://github.com/asmodehn/measurements.ex"}
     ]
