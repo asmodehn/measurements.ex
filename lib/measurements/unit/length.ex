@@ -8,6 +8,7 @@ defmodule Measurements.Unit.Length do
 
   alias Measurements.Unit.Dimensionable
   alias Measurements.Unit.Scalable
+  alias Measurements.Unit.Unitable
 
   # The one place to manage the length unit atoms, for compatibility with Elixir.System
   # exposing them outside this module
@@ -19,19 +20,38 @@ defmodule Measurements.Unit.Length do
   defmacro nanometer, do: quote(do: :nanometer)
 
   @doc """
-  macro used for reflection at compile time : which units are defined in this module.
+  macro used for reflection at compile time : which units are usable with this module.
   """
   defmacro __units, do: [kilometer(), meter(), millimeter(), micrometer(), nanometer()]
+
+  defmacro __alias(unit),
+    do:
+      quote(
+        do:
+          Keyword.get(
+            [
+              kilometers: unquote(kilometer()),
+              meters: unquote(meter()),
+              millimeters: unquote(millimeter()),
+              micrometers: unquote(micrometer()),
+              nanometers: unquote(nanometer())
+            ],
+            unquote(unit)
+          )
+      )
 
   @type t :: atom
 
   @behaviour Dimensionable
   @impl Dimensionable
+  # no special dimension if no unit. useful to break loop cleanly when alias not found.
+  def dimension(nil), do: Dimension.new()
   def dimension(kilometer()), do: Dimension.new() |> Dimension.with_length(1)
   def dimension(meter()), do: Dimension.new() |> Dimension.with_length(1)
   def dimension(millimeter()), do: Dimension.new() |> Dimension.with_length(1)
   def dimension(micrometer()), do: Dimension.new() |> Dimension.with_length(1)
   def dimension(nanometer()), do: Dimension.new() |> Dimension.with_length(1)
+  def dimension(unit) when is_atom(unit), do: dimension(__alias(unit))
 
   def dimension(ps) when is_integer(ps) and ps > 0,
     do: Dimension.new() |> Dimension.with_length(1)
@@ -40,16 +60,21 @@ defmodule Measurements.Unit.Length do
 
   @behaviour Scalable
   @impl Scalable
+  # no special dimension if no unit. useful to break loop cleanly when alias not found.
+  def scale(nil), do: Scale.new(0)
   def scale(kilometer()), do: Scale.new(3)
   def scale(meter()), do: Scale.new(0)
   def scale(millimeter()), do: Scale.new(-3)
   def scale(micrometer()), do: Scale.new(-6)
   def scale(nanometer()), do: Scale.new(-9)
+  def scale(unit) when is_atom(unit), do: scale(__alias(unit))
 
   def scale(other), do: raise(ArgumentError, message: argument_error_message(other))
 
-  @spec new(Scale.t(), Dimension.t()) :: {:ok, atom} | {:error, fun, atom}
-  def new(%Scale{coefficient: 1} = s, %Dimension{
+  @behaviour Unitable
+  @impl Unitable
+  @spec unit(Scale.t(), Dimension.t()) :: {:ok, atom} | {:error, fun, atom}
+  def unit(%Scale{coefficient: 1} = s, %Dimension{
         time: 0,
         length: 1,
         mass: 0,

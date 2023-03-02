@@ -7,6 +7,26 @@ defmodule Measurements.Unit.LengthTest do
   alias Measurements.Dimension
   alias Measurements.Scale
 
+  describe "__units/0" do
+    test "list units available in this module" do
+      assert :kilometer in Length.__units()
+      assert :meter in Length.__units()
+      assert :millimeter in Length.__units()
+      assert :micrometer in Length.__units()
+      assert :nanometer in Length.__units()
+    end
+  end
+
+  describe "__aliases/0" do
+    test "list aliases available for the units in this module" do
+      assert Length.__alias(:kilometers) == :kilometer
+      assert Length.__alias(:meters) == :meter
+      assert Length.__alias(:millimeters) == :millimeter
+      assert Length.__alias(:micrometers) == :micrometer
+      assert Length.__alias(:nanometers) == :nanometer
+    end
+  end
+
   describe "scale/1" do
     test "provide the scale of a length unit" do
       assert Length.scale(Length.kilometer()) == Scale.new(3)
@@ -14,6 +34,18 @@ defmodule Measurements.Unit.LengthTest do
       assert Length.scale(Length.millimeter()) == Scale.new(-3)
       assert Length.scale(Length.micrometer()) == Scale.new(-6)
       assert Length.scale(Length.nanometer()) == Scale.new(-9)
+    end
+
+    test "supports nil" do
+      assert Length.scale(nil) == Scale.new(0)
+    end
+
+    test " supports aliases" do
+      assert Length.scale(:kilometers) == Scale.new(3)
+      assert Length.scale(:meters) == Scale.new(0)
+      assert Length.scale(:millimeters) == Scale.new(-3)
+      assert Length.scale(:micrometers) == Scale.new(-6)
+      assert Length.scale(:nanometers) == Scale.new(-9)
     end
   end
 
@@ -25,21 +57,33 @@ defmodule Measurements.Unit.LengthTest do
       assert Length.dimension(Length.micrometer()) == Dimension.new() |> Dimension.with_length(1)
       assert Length.dimension(Length.nanometer()) == Dimension.new() |> Dimension.with_length(1)
     end
+
+    test "supports nil" do
+      assert Length.dimension(nil) == %Dimension{}
+    end
+
+    test " supports aliases" do
+      assert Length.dimension(:kilometers) == %Dimension{length: 1}
+      assert Length.dimension(:meters) == %Dimension{length: 1}
+      assert Length.dimension(:millimeters) == %Dimension{length: 1}
+      assert Length.dimension(:micrometers) == %Dimension{length: 1}
+      assert Length.dimension(:nanometers) == %Dimension{length: 1}
+    end
   end
 
-  describe "new/2" do
+  describe "unit/2" do
     test "supports Scale and Dimension as arguments to get meter" do
-      {:ok, :kilometer} = Length.new(Scale.new(3), %Dimension{length: 1})
-      {:ok, :meter} = Length.new(Scale.new(0), %Dimension{length: 1})
-      {:ok, :millimeter} = Length.new(Scale.new(-3), %Dimension{length: 1})
-      {:ok, :micrometer} = Length.new(Scale.new(-6), %Dimension{length: 1})
-      {:ok, :nanometer} = Length.new(Scale.new(-9), %Dimension{length: 1})
+      {:ok, :kilometer} = Length.unit(Scale.new(3), %Dimension{length: 1})
+      {:ok, :meter} = Length.unit(Scale.new(0), %Dimension{length: 1})
+      {:ok, :millimeter} = Length.unit(Scale.new(-3), %Dimension{length: 1})
+      {:ok, :micrometer} = Length.unit(Scale.new(-6), %Dimension{length: 1})
+      {:ok, :nanometer} = Length.unit(Scale.new(-9), %Dimension{length: 1})
 
-      {:error, convert, unit} = Length.new(Scale.new(7), %Dimension{length: 1})
+      {:error, convert, unit} = Length.unit(Scale.new(7), %Dimension{length: 1})
       assert unit == :kilometer
       assert convert.(42) == 420_000
 
-      {:error, convert, unit} = Length.new(Scale.new(-7), %Dimension{length: 1})
+      {:error, convert, unit} = Length.unit(Scale.new(-7), %Dimension{length: 1})
       assert unit == :nanometer
       assert convert.(42) == 4200
     end

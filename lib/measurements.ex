@@ -52,6 +52,9 @@ defmodule Measurements do
 
       {:error, conversion, nu} ->
         %__MODULE__{value: conversion.(v), unit: nu}
+
+      {:error, :not_a_supported_time_unit} ->
+        raise ArgumentError, message: "#{unit} is not a supported time unit"
     end
   end
 
@@ -76,6 +79,9 @@ defmodule Measurements do
 
       {:error, conversion, nu} ->
         %__MODULE__{value: conversion.(v), unit: nu}
+
+      {:error, :not_a_supported_length_unit} ->
+        raise ArgumentError, message: "#{unit} is not a supported length unit"
     end
   end
 
@@ -96,7 +102,8 @@ defmodule Measurements do
     # normalize the unit
     case Unit.new(unit) do
       # TODO : while new/2 seems the more intuitive approach, 
-      # we need a way to pass unknown units to Unit.new/2 somehow...
+      # we might need a way to pass unknown units to Unit.new/2 somehow...
+      # maybe create them with time/1, length/1 ??
       {:ok, nu} ->
         %__MODULE__{value: v, unit: nu}
 

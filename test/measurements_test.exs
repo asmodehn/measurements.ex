@@ -15,6 +15,31 @@ defmodule MeasurementsTest do
     end
   end
 
+  describe "length/2 " do
+    test "create a length measurement" do
+      assert Measurements.length(51, :millimeter) == %Measurements{
+               value: 51,
+               unit: :millimeter
+             }
+    end
+
+    test "refuses units that are not related to length" do
+      assert_raise(ArgumentError, fn -> Measurements.length(33, :second) end)
+    end
+  end
+
+  describe "new/2" do
+    test "build any type of measurement" do
+      assert Measurements.new(33, :micrometer) == %Measurements{value: 33, unit: :micrometer}
+      assert Measurements.new(42, :millisecond) == %Measurements{value: 42, unit: :millisecond}
+    end
+
+    test "supports aliases" do
+      assert Measurements.new(33, :micrometers) == %Measurements{value: 33, unit: :micrometer}
+      assert Measurements.new(42, :milliseconds) == %Measurements{value: 42, unit: :millisecond}
+    end
+  end
+
   describe "with_error/3" do
     test "allows adding error to an existing measurement, with conversion" do
       assert Measurements.time(51, :millisecond)

@@ -14,6 +14,13 @@ defmodule Measurements.UnitTest do
       assert Unit.time(:microsecond) == {:ok, :microsecond}
       assert Unit.time(:nanosecond) == {:ok, :nanosecond}
     end
+
+    test "supports aliases" do
+      assert Unit.time(:seconds) == {:ok, :second}
+      assert Unit.time(:milliseconds) == {:ok, :millisecond}
+      assert Unit.time(:microseconds) == {:ok, :microsecond}
+      assert Unit.time(:nanoseconds) == {:ok, :nanosecond}
+    end
   end
 
   describe "length/1 normalizes a unit if it represents length" do
@@ -23,6 +30,14 @@ defmodule Measurements.UnitTest do
       assert Unit.length(:millimeter) == {:ok, :millimeter}
       assert Unit.length(:micrometer) == {:ok, :micrometer}
       assert Unit.length(:nanometer) == {:ok, :nanometer}
+    end
+
+    test "support aliases" do
+      assert Unit.length(:kilometers) == {:ok, :kilometer}
+      assert Unit.length(:meters) == {:ok, :meter}
+      assert Unit.length(:millimeters) == {:ok, :millimeter}
+      assert Unit.length(:micrometers) == {:ok, :micrometer}
+      assert Unit.length(:nanometers) == {:ok, :nanometer}
     end
   end
 
@@ -37,6 +52,11 @@ defmodule Measurements.UnitTest do
     test "normalizes a unit of any dimension" do
       assert Unit.new(:micrometer) == {:ok, :micrometer}
       assert Unit.new(:millisecond) == {:ok, :millisecond}
+    end
+
+    test "supports aliases" do
+      assert Unit.new(:micrometers) == {:ok, :micrometer}
+      assert Unit.new(:milliseconds) == {:ok, :millisecond}
     end
   end
 

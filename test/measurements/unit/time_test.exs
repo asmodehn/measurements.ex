@@ -21,6 +21,15 @@ defmodule Measurements.Unit.TimeTest do
     end
   end
 
+  describe "__aliases/0" do
+    test "list aliases available for the units in this module" do
+      assert Time.__alias(:seconds) == :second
+      assert Time.__alias(:milliseconds) == :millisecond
+      assert Time.__alias(:microseconds) == :microsecond
+      assert Time.__alias(:nanoseconds) == :nanosecond
+    end
+  end
+
   describe "scale/1" do
     test "provide the scale of a time unit" do
       assert Time.scale(Time.second()) == Scale.new(0)
@@ -41,6 +50,17 @@ defmodule Measurements.Unit.TimeTest do
       assert Time.scale(Time.megahertz()) == Scale.new(6)
       assert Time.scale(Time.gigahertz()) == Scale.new(9)
     end
+
+    test "supports nil" do
+      assert Time.scale(nil) == Scale.new(0)
+    end
+
+    test "supports aliases" do
+      assert Time.scale(:seconds) == Scale.new(0)
+      assert Time.scale(:milliseconds) == Scale.new(-3)
+      assert Time.scale(:microseconds) == Scale.new(-6)
+      assert Time.scale(:nanoseconds) == Scale.new(-9)
+    end
   end
 
   describe "dimension/1" do
@@ -60,35 +80,46 @@ defmodule Measurements.Unit.TimeTest do
       assert Time.dimension(Time.megahertz()) == Dimension.new() |> Dimension.with_time(-1)
       assert Time.dimension(Time.gigahertz()) == Dimension.new() |> Dimension.with_time(-1)
     end
+
+    test "supports nil" do
+      assert Time.dimension(nil) == %Dimension{}
+    end
+
+    test "supports aliases" do
+      assert Time.dimension(:seconds) == %Dimension{time: 1}
+      assert Time.dimension(:milliseconds) == %Dimension{time: 1}
+      assert Time.dimension(:microseconds) == %Dimension{time: 1}
+      assert Time.dimension(:nanoseconds) == %Dimension{time: 1}
+    end
   end
 
-  describe "new/2" do
+  describe "unit/2" do
     test "supports Scale and Dimension as arguments to get second" do
-      {:ok, :second} = Time.new(Scale.new(), %Dimension{time: 1})
-      {:ok, :millisecond} = Time.new(Scale.new(-3), %Dimension{time: 1})
-      {:ok, :microsecond} = Time.new(Scale.new(-6), %Dimension{time: 1})
-      {:ok, :nanosecond} = Time.new(Scale.new(-9), %Dimension{time: 1})
+      {:ok, :second} = Time.unit(Scale.new(), %Dimension{time: 1})
+      {:ok, :millisecond} = Time.unit(Scale.new(-3), %Dimension{time: 1})
+      {:ok, :microsecond} = Time.unit(Scale.new(-6), %Dimension{time: 1})
+      {:ok, :nanosecond} = Time.unit(Scale.new(-9), %Dimension{time: 1})
 
-      {:error, convert, unit} = Time.new(Scale.new(7), %Dimension{time: 1})
+      {:error, convert, unit} = Time.unit(Scale.new(7), %Dimension{time: 1})
       assert unit == :second
       assert convert.(42) == 420_000_000
 
-      {:error, convert, unit} = Time.new(Scale.new(-7), %Dimension{time: 1})
+      {:error, convert, unit} = Time.unit(Scale.new(-7), %Dimension{time: 1})
       assert unit == :nanosecond
       assert convert.(42) == 4200
     end
 
     test "supports Scale and Dimension as arguments to get hertz" do
-      {:ok, :hertz} = Time.new(Scale.new(), %Dimension{time: -1})
-      {:ok, :kilohertz} = Time.new(Scale.new(3), %Dimension{time: -1})
-      {:ok, :megahertz} = Time.new(Scale.new(6), %Dimension{time: -1})
-      {:ok, :gigahertz} = Time.new(Scale.new(9), %Dimension{time: -1})
+      {:ok, :hertz} = Time.unit(Scale.new(), %Dimension{time: -1})
+      {:ok, :kilohertz} = Time.unit(Scale.new(3), %Dimension{time: -1})
+      {:ok, :megahertz} = Time.unit(Scale.new(6), %Dimension{time: -1})
+      {:ok, :gigahertz} = Time.unit(Scale.new(9), %Dimension{time: -1})
 
-      {:error, convert, unit} = Time.new(Scale.new(7), %Dimension{time: -1})
+      {:error, convert, unit} = Time.unit(Scale.new(7), %Dimension{time: -1})
       assert unit == :megahertz
       assert convert.(42) == 420
 
-      {:error, convert, unit} = Time.new(Scale.new(-7), %Dimension{time: -1})
+      {:error, convert, unit} = Time.unit(Scale.new(-7), %Dimension{time: -1})
       assert unit == :hertz
       assert convert.(42) == 0.0000042
     end

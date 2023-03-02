@@ -43,27 +43,36 @@ defmodule Measurements.Unit do
   @type value :: integer()
 
   @doc """
-  Normalizes a known time unit
+  Normalizes a custom time unit to a known one.
   """
   @spec time(atom) :: {:ok, t} | {:error, (value -> value), t}
   @spec time(atom, integer) :: {:ok, t} | {:error, (value -> value), t}
   def time(unit, power_ten_scale \\ 0) do
-    Time.new(
-      Scale.prod(Scale.new(power_ten_scale), Time.scale(unit)),
-      Time.dimension(unit)
-    )
+    if unit in Time.__units() or Time.__alias(unit) do
+      Time.unit(
+        Scale.prod(Scale.new(power_ten_scale), Time.scale(unit)),
+        Time.dimension(unit)
+      )
+    else
+      {:error, :not_a_supported_time_unit}
+    end
   end
 
   @doc """
-  Normalizes a known length unit
+  Normalizes a custom length unit to a known one
   """
   @spec length(atom) :: {:ok, t} | {:error, (value -> value), t}
   @spec length(atom, integer) :: {:ok, t} | {:error, (value -> value), t}
   def length(unit, power_ten_scale \\ 0) do
-    Length.new(
-      Scale.prod(Scale.new(power_ten_scale), Length.scale(unit)),
-      Length.dimension(unit)
-    )
+    if unit in Length.__units() or Length.__alias(unit) do
+      # let the Length module handle it
+      Length.unit(
+        Scale.prod(Scale.new(power_ten_scale), Length.scale(unit)),
+        Length.dimension(unit)
+      )
+    else
+      {:error, :not_a_supported_length_unit}
+    end
   end
 
   @doc """
@@ -76,6 +85,9 @@ defmodule Measurements.Unit do
     cond do
       unit in Time.__units() -> {:ok, Time}
       unit in Length.__units() -> {:ok, Length}
+      # nil if not found in aliases
+      Time.__alias(unit) -> {:ok, Time}
+      Length.__alias(unit) -> {:ok, Length}
       true -> {:error, :unit_module_not_found}
     end
   end
@@ -84,19 +96,18 @@ defmodule Measurements.Unit do
   Normalizes a known unit, of any dimension
   """
   @spec new(atom) :: {:ok, t} | {:error, (value -> value), t}
-  @spec new(atom, integer) :: {:ok, t} | {:error, (value -> value), t}
-  def new(unit, power_ten_scale \\ 0) do
-    {:ok, unit_module} = module(unit)
+  def new(unit) do
+    case module(unit) do
+      {:ok, unit_module} ->
+        unit_module.unit(
+          unit_module.scale(unit),
+          unit_module.dimension(unit)
+        )
 
-    unit_module.new(
-      Scale.prod(Scale.new(power_ten_scale), unit_module.scale(unit)),
-      unit_module.dimension(unit)
-    )
+      {:error, what} ->
+        raise what
+    end
   end
-
-  # TODO : this usage is a bit confusing. we should probably
-  # -> remove the power_ten_scale, more confusing than useful
-  # -> allow unit creation, passing a scale (relative to base unit) and a dimension, somehow...
 
   @doc """
   Conversion algorithm from a unit to another.

@@ -8,8 +8,9 @@ defmodule Measurements.Unit.Time do
 
   alias Measurements.Unit.Dimensionable
   alias Measurements.Unit.Scalable
+  alias Measurements.Unit.Unitable
 
-  # The one place to manage the time unit atoms, for compatibility with Elixir.System
+  # The one place to manage the time unit atoms, for compatibility with other systems (like Elixir.System)
   # exposing them outside this module
   defmacro second, do: quote(do: :second)
   defmacro millisecond, do: quote(do: :millisecond)
@@ -22,7 +23,7 @@ defmodule Measurements.Unit.Time do
   defmacro gigahertz, do: quote(do: :gigahertz)
 
   @doc """
-  macro used for reflection at compile time : which units are defined in this module.
+  macro used for reflection at compile time: which units are usable with this module.
   """
   defmacro __units,
     do: [
@@ -36,10 +37,28 @@ defmodule Measurements.Unit.Time do
       gigahertz()
     ]
 
+  defmacro __alias(unit),
+    do:
+      quote(
+        do:
+          Keyword.get(
+            [
+              seconds: unquote(second()),
+              milliseconds: unquote(millisecond()),
+              microseconds: unquote(microsecond()),
+              nanoseconds: unquote(nanosecond())
+            ],
+            unquote(unit)
+          )
+      )
+
   @type t :: atom | non_neg_integer
 
   @behaviour Dimensionable
   @impl Dimensionable
+
+  # no special dimension if no unit. useful to break loop cleanly when alias not found.
+  def dimension(nil), do: Dimension.new()
   def dimension(second()), do: Dimension.new() |> Dimension.with_time(1)
   def dimension(millisecond()), do: Dimension.new() |> Dimension.with_time(1)
   def dimension(microsecond()), do: Dimension.new() |> Dimension.with_time(1)
@@ -50,11 +69,14 @@ defmodule Measurements.Unit.Time do
   def dimension(kilohertz()), do: Dimension.new() |> Dimension.with_time(-1)
   def dimension(megahertz()), do: Dimension.new() |> Dimension.with_time(-1)
   def dimension(gigahertz()), do: Dimension.new() |> Dimension.with_time(-1)
+  def dimension(unit) when is_atom(unit), do: dimension(__alias(unit))
 
   def dimension(other), do: raise(ArgumentError, message: argument_error_message(other))
 
   @behaviour Scalable
   @impl Scalable
+  # no special scale if no unit. useful to break loop when alias not found.
+  def scale(nil), do: Scale.new(0)
   def scale(second()), do: Scale.new(0)
   def scale(millisecond()), do: Scale.new(-3)
   def scale(microsecond()), do: Scale.new(-6)
@@ -70,11 +92,14 @@ defmodule Measurements.Unit.Time do
   def scale(kilohertz()), do: Scale.new(3)
   def scale(megahertz()), do: Scale.new(6)
   def scale(gigahertz()), do: Scale.new(9)
+  def scale(unit) when is_atom(unit), do: scale(__alias(unit))
 
   def scale(other), do: raise(ArgumentError, message: argument_error_message(other))
 
-  @spec new(Scale.t(), Dimension.t()) :: {:ok, atom} | {:error, fun, atom}
-  def new(%Scale{coefficient: 1} = s, %Dimension{
+  @behaviour Unitable
+  @impl Unitable
+  @spec unit(Scale.t(), Dimension.t()) :: {:ok, atom} | {:error, fun, atom}
+  def unit(%Scale{coefficient: 1} = s, %Dimension{
         time: 1,
         length: 0,
         mass: 0,
@@ -110,7 +135,7 @@ defmodule Measurements.Unit.Time do
     end
   end
 
-  def new(%Scale{coefficient: 1} = s, %Dimension{
+  def unit(%Scale{coefficient: 1} = s, %Dimension{
         time: -1,
         length: 0,
         mass: 0,
