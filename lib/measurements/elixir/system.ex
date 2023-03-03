@@ -86,7 +86,7 @@ defmodule Measurements.System do
   end
 
   @doc false
-  defp impl, do: Application.get_env(:xest_clock, :system_module, System)
+  defp impl, do: Application.get_env(:measurements, :system_module, Elixir.System)
 
   @doc """
     Function to retrieve dynamically the native time_unit.
@@ -102,7 +102,7 @@ defmodule Measurements.System do
 
   @doc false
   defp extra_impl,
-    do: Application.get_env(:xest_clock, :system_extra_module, XestClock.System.Extra)
+    do: Application.get_env(:measurements, :system_extra_module, Measurements.System.Extra)
 
   @doc """
   Converts `time` from time unit `from_unit` to time unit `to_unit`.

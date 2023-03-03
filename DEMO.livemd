@@ -131,6 +131,59 @@ We can verify this result, and maybe get an exact match, even if the value is a 
 
 This will require more involved unit dimension manipulation...
 
+## Measurement Stream
+
+Usually measurements done come one at a time, but as a stream of events. Therefore they depend on the time when the measurement was made. This time, measured locally, has a specific meaning for our stream of measurements.
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Local Timestamp
+
+<!-- livebook:{"break_markdown":true} -->
+
+A Local timestamp contains  the node identifier as well as the monotonic time for this node, a unit and the vm_offset to retrieve the cluster time:
+
+```elixir
+Measurements.Timestamp.now()
+```
+
+#### Delta
+
+<!-- livebook:{"break_markdown":true} -->
+
+As a specific operation that makes sense on localtime, there is `delta/2` that computes the difference. However if both timestamp come from the same node, the difference will only take in account monotonic time, following good distributed time management practices with the BEAM.
+
+```elixir
+before = Measurements.Timestamp.now()
+Process.sleep(1000)
+now = Measurements.Timestamp.now()
+Measurements.Timestamp.delta(now, before)
+```
+
+Implicit conversion is also handled, albeit with `System` module directly without relying on `Measurements` features for simplicity.
+
+```elixir
+before = Measurements.Timestamp.now(:millisecond)
+Process.sleep(1000)
+now = Measurements.Timestamp.now(:microsecond)
+Measurements.Timestamp.delta(now, before)
+```
+
+#### Between
+
+<!-- livebook:{"break_markdown":true} -->
+
+A special operation on Timestamp is `between/2` to compute the timestamp (with error) between two timestamps. This is useful to have a Timestamp representing something observed at an uncertain point in time, like when doing a remote request for example.
+
+```elixir
+before = Measurements.Timestamp.now() |> IO.inspect()
+Process.sleep(1000)
+now = Measurements.Timestamp.now() |> IO.inspect()
+Measurements.Timestamp.between(now, before)
+```
+
+### The Stream
+
 ## Discrete Calculus
 
 With the capabilities in Measurements so far, we can already implement some basic discrete calculus on physical quantities.
