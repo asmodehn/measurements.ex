@@ -1,4 +1,4 @@
-defmodule Measurements.Scale do
+defmodule Measurements.Unit.Scale do
   @moduledoc """
     `Measurements.Scale` deals with the scale of a unit and related conversion
   """

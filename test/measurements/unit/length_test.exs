@@ -4,8 +4,8 @@ defmodule Measurements.Unit.LengthTest do
 
   alias Measurements.Unit.Length
 
-  alias Measurements.Dimension
-  alias Measurements.Scale
+  alias Measurements.Unit.Dimension
+  alias Measurements.Unit.Scale
 
   describe "__units/0" do
     test "list units available in this module" do

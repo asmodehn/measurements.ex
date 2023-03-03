@@ -28,14 +28,13 @@ defmodule Measurements.Unit do
       42_000
 
   """
-  require System
 
   require Measurements.Unit.Time
   require Measurements.Unit.Length
 
   alias Measurements.Unit.Time
   alias Measurements.Unit.Length
-  alias Measurements.Scale
+  alias Measurements.Unit.Scale
 
   @typedoc "Unit Type"
   @type t :: atom()

@@ -1,4 +1,4 @@
-defmodule Measurements.Dimension do
+defmodule Measurements.Unit.Dimension do
   @moduledoc """
     `Measurements.Dimension` deals with the dimension of a unit and related conversion
   """

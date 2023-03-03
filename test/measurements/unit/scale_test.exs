@@ -1,8 +1,8 @@
-defmodule Measurements.ScaleTest do
+defmodule Measurements.Unit.ScaleTest do
   use ExUnit.Case
-  doctest Measurements.Scale
+  doctest Measurements.Unit.Scale
 
-  alias Measurements.Scale
+  alias Measurements.Unit.Scale
 
   describe "from_value/2" do
     test "converts value to a scale, while keeping only integers" do

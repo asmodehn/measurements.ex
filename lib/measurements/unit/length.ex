@@ -3,8 +3,8 @@ defmodule Measurements.Unit.Length do
     `Measurements.Unit.Length` deals with length-related units.
   """
 
-  alias Measurements.Dimension
-  alias Measurements.Scale
+  alias Measurements.Unit.Dimension
+  alias Measurements.Unit.Scale
 
   alias Measurements.Unit.Dimensionable
   alias Measurements.Unit.Scalable

@@ -18,7 +18,7 @@ defmodule Measurements do
   """
 
   ## only for now, for ratio...
-  require Measurements.Scale
+  require Measurements.Unit.Scale
 
   alias Measurements.Unit
 
