@@ -34,7 +34,9 @@ defmodule Measurements.Unit do
 
   alias Measurements.Unit.Time
   alias Measurements.Unit.Length
+
   alias Measurements.Unit.Scale
+  alias Measurements.Unit.Dimension
 
   @typedoc "Unit Type"
   @type t :: atom()
@@ -82,6 +84,7 @@ defmodule Measurements.Unit do
   @spec module(atom) :: atom
   def module(unit) do
     cond do
+      is_nil(unit) -> {:ok, nil}
       unit in Time.__units() -> {:ok, Time}
       unit in Length.__units() -> {:ok, Length}
       # nil if not found in aliases
@@ -95,6 +98,8 @@ defmodule Measurements.Unit do
   Normalizes a known unit, of any dimension
   """
   @spec new(atom) :: {:ok, t} | {:error, (value -> value), t}
+  def new(nil), do: {:ok, nil}
+
   def new(unit) do
     case module(unit) do
       {:ok, unit_module} ->
@@ -103,8 +108,8 @@ defmodule Measurements.Unit do
           unit_module.dimension(unit)
         )
 
-      {:error, what} ->
-        raise what
+      {:error, :unit_module_not_found} ->
+        raise RuntimeError, message: "#{unit} not found in Measurements.Unit.*"
     end
   end
 
@@ -112,6 +117,8 @@ defmodule Measurements.Unit do
   The dimension of the unit
   """
   @spec dimension(atom) :: {:ok, Dimension.t()} | {:error, term}
+  def dimension(nil), do: {:ok, %Dimension{}}
+
   def dimension(unit) do
     case module(unit) do
       {:ok, unit_module} ->
@@ -125,6 +132,8 @@ defmodule Measurements.Unit do
   @doc """
   """
   @spec scale(atom) :: {:ok, Scale.t()} | {:error, term}
+  def scale(nil), do: {:ok, %Scale{}}
+
   def scale(unit) do
     case module(unit) do
       {:ok, unit_module} ->
@@ -164,6 +173,8 @@ defmodule Measurements.Unit do
   This means the returned unit will be the most precise
   """
   @spec min(t, t) :: t
+  def min(nil, nil), do: {:ok, nil}
+
   def min(u1, u2) do
     {:ok, dim2} = dimension(u2)
 
@@ -172,6 +183,9 @@ defmodule Measurements.Unit do
         {:ok, s1} = scale(u1)
         {:ok, s2} = scale(u2)
         {:ok, if(s1 < s2, do: u1, else: u2)}
+
+      {:ok, _another_dim} ->
+        {:error, :incompatible_dimension}
 
       {:error, what} ->
         {:error, what}
@@ -183,6 +197,8 @@ defmodule Measurements.Unit do
   This means the returned unit will be the least precise
   """
   @spec max(t, t) :: t
+  def max(nil, nil), do: {:ok, nil}
+
   def max(u1, u2) do
     {:ok, dim2} = dimension(u2)
 
@@ -192,12 +208,17 @@ defmodule Measurements.Unit do
         {:ok, s2} = scale(u2)
         {:ok, if(s1 >= s2, do: u1, else: u2)}
 
+      {:ok, _another_dim} ->
+        {:error, :incompatible_dimension}
+
       {:error, what} ->
         {:error, what}
     end
   end
 
   @spec to_string(atom) :: String.t()
+  def to_string(nil), do: ""
+
   def to_string(unit) do
     {:ok, unit_module} = module(unit)
     unit_module.to_string(unit)

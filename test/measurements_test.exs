@@ -4,7 +4,7 @@ defmodule MeasurementsTest do
 
   describe "time/2 " do
     test "create a time measurement" do
-      assert Measurements.time(51, :millisecond) == %Measurements{
+      assert Measurements.time(51, :millisecond) == %Measurements.Value{
                value: 51,
                unit: :millisecond
              }
@@ -15,7 +15,7 @@ defmodule MeasurementsTest do
     end
 
     test "supports extra argument for error" do
-      assert Measurements.time(51, :millisecond, 3) == %Measurements{
+      assert Measurements.time(51, :millisecond, 3) == %Measurements.Value{
                value: 51,
                unit: :millisecond,
                error: 3
@@ -25,7 +25,7 @@ defmodule MeasurementsTest do
 
   describe "length/2 " do
     test "create a length measurement" do
-      assert Measurements.length(51, :millimeter) == %Measurements{
+      assert Measurements.length(51, :millimeter) == %Measurements.Value{
                value: 51,
                unit: :millimeter
              }
@@ -36,7 +36,7 @@ defmodule MeasurementsTest do
     end
 
     test "supports extra argument for error" do
-      assert Measurements.length(51, :millimeter, 4) == %Measurements{
+      assert Measurements.length(51, :millimeter, 4) == %Measurements.Value{
                value: 51,
                unit: :millimeter,
                error: 4
@@ -44,86 +44,18 @@ defmodule MeasurementsTest do
     end
   end
 
-  describe "new/2" do
-    test "build any type of measurement" do
-      assert Measurements.new(33, :micrometer) == %Measurements{value: 33, unit: :micrometer}
-      assert Measurements.new(42, :millisecond) == %Measurements{value: 42, unit: :millisecond}
-    end
-
-    test "supports aliases" do
-      assert Measurements.new(33, :micrometers) == %Measurements{value: 33, unit: :micrometer}
-      assert Measurements.new(42, :milliseconds) == %Measurements{value: 42, unit: :millisecond}
-    end
-
-    test "supports extra argument for errors" do
-      assert Measurements.new(33, :micrometer, 3) == %Measurements{
-               value: 33,
-               unit: :micrometer,
-               error: 3
-             }
-
-      assert Measurements.new(42, :millisecond, 2) == %Measurements{
-               value: 42,
-               unit: :millisecond,
-               error: 2
-             }
-    end
-  end
-
-  describe "add_error/3" do
-    test "allows adding error to an existing measurement, with conversion" do
-      assert Measurements.time(51, :millisecond)
-             |> Measurements.add_error(33, :microsecond) == %Measurements{
-               value: 51_000,
-               unit: :microsecond,
-               error: 33
-             }
-    end
-
-    test "adds negative errors as positive, with conversion" do
-      assert Measurements.time(51, :millisecond)
-             |> Measurements.add_error(-33, :microsecond) == %Measurements{
-               value: 51_000,
-               unit: :microsecond,
-               error: 33
-             }
-    end
-  end
-
-  describe "best_convert/2" do
-    test "converts if the unit precision is greater than current one" do
-      assert Measurements.time(42, :millisecond)
-             |> Measurements.best_convert(:microsecond) == %Measurements{
-               value: 42_000,
-               unit: :microsecond
-             }
-    end
-
-    test "doesnt do anything if precision is less than current one" do
-      assert Measurements.time(42, :millisecond)
-             |> Measurements.best_convert(:second) == %Measurements{
-               value: 42,
-               unit: :millisecond
-             }
-    end
-  end
-
   describe "sum/2" do
     test "sums two measurements of same dimension" do
       assert Measurements.time(42, :second)
-             |> Measurements.sum(Measurements.time(51, :second)) == %Measurements{
+             |> Measurements.sum(Measurements.time(51, :second)) == %Measurements.Value{
                value: 42 + 51,
                unit: :second
              }
     end
 
     test "sums two measurements with error propagation" do
-      assert Measurements.time(42, :second)
-             |> Measurements.add_error(3, :second)
-             |> Measurements.sum(
-               Measurements.time(51, :second)
-               |> Measurements.add_error(4, :second)
-             ) == %Measurements{
+      assert Measurements.time(42, :second, 3)
+             |> Measurements.sum(Measurements.time(51, :second, 4)) == %Measurements.Value{
                value: 42 + 51,
                unit: :second,
                error: 4 + 3
@@ -131,12 +63,8 @@ defmodule MeasurementsTest do
     end
 
     test "sums two measurements with conversion to best unit" do
-      assert Measurements.time(42, :second)
-             |> Measurements.add_error(3, :millisecond)
-             |> Measurements.sum(
-               Measurements.time(51, :second)
-               |> Measurements.add_error(4, :second)
-             ) == %Measurements{
+      assert Measurements.time(42_000, :millisecond, 3)
+             |> Measurements.sum(Measurements.time(51, :second, 4)) == %Measurements.Value{
                value: 42_000 + 51_000,
                unit: :millisecond,
                error: 4_000 + 3
@@ -154,19 +82,15 @@ defmodule MeasurementsTest do
   describe "delta/2" do
     test "compute the difference of two measurements of same dimension" do
       assert Measurements.time(42, :second)
-             |> Measurements.delta(Measurements.time(51, :second)) == %Measurements{
+             |> Measurements.delta(Measurements.time(51, :second)) == %Measurements.Value{
                value: 42 - 51,
                unit: :second
              }
     end
 
     test "compute the difference of two measurements with error propagation" do
-      assert Measurements.time(42, :second)
-             |> Measurements.add_error(3, :second)
-             |> Measurements.delta(
-               Measurements.time(51, :second)
-               |> Measurements.add_error(4, :second)
-             ) == %Measurements{
+      assert Measurements.time(42, :second, 3)
+             |> Measurements.delta(Measurements.time(51, :second, 4)) == %Measurements.Value{
                value: 42 - 51,
                unit: :second,
                # CAREFUL : error is added
@@ -175,12 +99,8 @@ defmodule MeasurementsTest do
     end
 
     test "compute the difference of two measurements with conversion to best unit" do
-      assert Measurements.time(42, :second)
-             |> Measurements.add_error(3, :millisecond)
-             |> Measurements.delta(
-               Measurements.time(51, :second)
-               |> Measurements.add_error(4, :second)
-             ) == %Measurements{
+      assert Measurements.time(42_000, :millisecond, 3)
+             |> Measurements.delta(Measurements.time(51, :second, 4)) == %Measurements.Value{
                value: 42_000 - 51_000,
                unit: :millisecond,
                error: 4_000 + 3
@@ -197,16 +117,15 @@ defmodule MeasurementsTest do
 
   describe "scale/2" do
     test "scale a measurement by an integer" do
-      assert Measurements.time(42, :second) |> Measurements.scale(10) == %Measurements{
+      assert Measurements.time(42, :second) |> Measurements.scale(10) == %Measurements.Value{
                value: 420,
                unit: :second
              }
     end
 
     test "scale a measurement with the associated error" do
-      assert Measurements.time(42, :second)
-             |> Measurements.add_error(3, :millisecond)
-             |> Measurements.scale(10) == %Measurements{
+      assert Measurements.time(42_000, :millisecond, 3)
+             |> Measurements.scale(10) == %Measurements.Value{
                value: 420_000,
                unit: :millisecond,
                error: 30
@@ -217,16 +136,15 @@ defmodule MeasurementsTest do
   describe "ratio/2" do
     test "compute the ratio of two measurements of same dimension" do
       assert Measurements.time(300, :second)
-             |> Measurements.ratio(Measurements.time(60, :second)) == %Measurements{
+             |> Measurements.ratio(Measurements.time(60, :second)) == %Measurements.Value{
                value: 5,
                unit: nil
              }
     end
 
     test "compute the ratio of two measurements with error propagation" do
-      assert Measurements.time(300, :second)
-             |> Measurements.add_error(3, :second)
-             |> Measurements.ratio(Measurements.time(60, :second)) == %Measurements{
+      assert Measurements.time(300, :second, 3)
+             |> Measurements.ratio(Measurements.time(60, :second)) == %Measurements.Value{
                value: 5,
                unit: nil,
                # CAREFUL : error is relative to the value
@@ -235,9 +153,8 @@ defmodule MeasurementsTest do
     end
 
     test "compute the ratio of two measurements with conversion to best unit" do
-      assert Measurements.time(300, :second)
-             |> Measurements.add_error(3, :millisecond)
-             |> Measurements.ratio(Measurements.time(60, :second)) == %Measurements{
+      assert Measurements.time(300_000, :millisecond, 3)
+             |> Measurements.ratio(Measurements.time(60, :second)) == %Measurements.Value{
                value: 5,
                unit: nil,
                # CAREFUL with scale here !
@@ -259,9 +176,7 @@ defmodule MeasurementsTest do
     end
 
     test "provides nice output with error in string" do
-      m =
-        Measurements.time(42, :millisecond)
-        |> Measurements.add_error(35, :microsecond)
+      m = Measurements.time(42_000, :microsecond, 35)
 
       assert "#{m}" == "42000 ±35 μs"
     end

@@ -37,7 +37,7 @@ defmodule Measurements.TimestampTest do
       |> expect(:self, fn -> :nonode@nohost end)
 
       assert Timestamp.now(:millisecond) |> Timestamp.system_time() ==
-               %Measurements{unit: :millisecond, value: 42 + 33}
+               %Measurements.Value{unit: :millisecond, value: 42 + 33}
     end
   end
 
@@ -56,7 +56,7 @@ defmodule Measurements.TimestampTest do
       now = Timestamp.now(:millisecond)
 
       assert Timestamp.delta(now, previous) ==
-               %Measurements{unit: :millisecond, value: 9}
+               %Measurements.Value{unit: :millisecond, value: 9}
     end
 
     test "compute the difference beween two timestamps of different node with vm_offset" do
@@ -74,7 +74,7 @@ defmodule Measurements.TimestampTest do
       now = Timestamp.now(:millisecond)
 
       assert Timestamp.delta(now, previous) ==
-               %Measurements{unit: :millisecond, value: 9 - 2}
+               %Measurements.Value{unit: :millisecond, value: 9 - 2}
     end
 
     test "compute the difference beween two timestamps with conversion" do
@@ -92,7 +92,7 @@ defmodule Measurements.TimestampTest do
       now = Timestamp.now(:microsecond)
 
       assert Timestamp.delta(now, previous) ==
-               %Measurements{unit: :microsecond, value: 9_000 - 2_000}
+               %Measurements.Value{unit: :microsecond, value: 9_000 - 2_000}
     end
   end
 

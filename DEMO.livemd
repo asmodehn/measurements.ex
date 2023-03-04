@@ -16,12 +16,18 @@ alias VegaLite, as: Vl
 
 ## Usage
 
-A measurement is just a struct that can be easily created like so:
+A measurement value is just a struct that can be easily created like so:
 
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-Measurements.new(4, :kilometer)
+Measurements.length(4, :kilometer)
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Measurements.Value.new(4, :kilometer)
 ```
 
 If desired, an associated error can be added onto that measurement
@@ -29,7 +35,13 @@ If desired, an associated error can be added onto that measurement
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-Measurements.new(300, :second) |> Measurements.add_error(4, :millisecond)
+Measurements.Value.new(300, :second) |> Measurements.Value.add_error(4, :millisecond)
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Measurements.time(300, :second, 1)
 ```
 
 A measurement can be converted to another unit of the same dimension
@@ -37,7 +49,7 @@ A measurement can be converted to another unit of the same dimension
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-Measurements.new(300, :second, 5) |> Measurements.best_convert(:microsecond)
+Measurements.time(300, :second, 5) |> Measurements.Value.best_convert(:microsecond)
 ```
 
 The best unit is chosen to avoid loosing precision. If the target unit is not better than the current one, the conversion is simply ignored.
@@ -45,7 +57,7 @@ The best unit is chosen to avoid loosing precision. If the target unit is not be
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-Measurements.new(300, :millisecond, 5) |> Measurements.best_convert(:second)
+Measurements.time(300, :millisecond, 5) |> Measurements.Value.best_convert(:second)
 ```
 
 This allows to operate on measurements without knowing their precision, but remaining confident no precision in lost in various computations.
@@ -59,8 +71,8 @@ This allows to operate on measurements without knowing their precision, but rema
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-m1 = Measurements.new(4, :millimeter)
-m2 = Measurements.new(543, :micrometer, 2)
+m1 = Measurements.length(4, :millimeter)
+m2 = Measurements.length(543, :micrometer, 2)
 
 Measurements.sum(m1, m2)
 ```
@@ -70,8 +82,8 @@ Otherwise an explicit error with clean measurement representation is displayed:
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-m1 = Measurements.new(4, :second) |> Measurements.add_error(5, :millisecond)
-m2 = Measurements.new(543, :micrometer)
+m1 = Measurements.time(4, :second) |> Measurements.Value.add_error(5, :millisecond)
+m2 = Measurements.length(543, :micrometer)
 Measurements.sum(m1, m2)
 ```
 
@@ -82,7 +94,7 @@ Scaling the `Measurement` by a constant is also supported. Note the scale also a
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-m1 = Measurements.new(4, :second) |> Measurements.add_error(5, :millisecond)
+m1 = Measurements.time(4, :second) |> Measurements.Value.add_error(5, :millisecond)
 Measurements.scale(m1, 60)
 ```
 
@@ -95,8 +107,8 @@ A more convenient `delta/2` function is provided for this purpose.
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-m1 = Measurements.new(4, :millimeter)
-m2 = Measurements.new(543, :micrometer, 2)
+m1 = Measurements.length(4, :millimeter)
+m2 = Measurements.length(543, :micrometer, 2)
 
 Measurements.delta(m1, m2)
 ```
@@ -111,8 +123,8 @@ Therefore the `nil` Unit is just a constant, with potentially an error...
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-m1 = Measurements.new(4, :millimeter)
-m2 = Measurements.new(543, :micrometer, 2)
+m1 = Measurements.length(4, :millimeter)
+m2 = Measurements.length(543, :micrometer, 2)
 Measurements.ratio(m1, m2)
 ```
 
@@ -143,6 +155,8 @@ Usually measurements done come one at a time, but as a stream of events. Therefo
 
 A Local timestamp contains  the node identifier as well as the monotonic time for this node, a unit and the vm_offset to retrieve the cluster time:
 
+<!-- livebook:{"reevaluate_automatically":true} -->
+
 ```elixir
 Measurements.Timestamp.now()
 ```
@@ -153,6 +167,8 @@ Measurements.Timestamp.now()
 
 As a specific operation that makes sense on localtime, there is `delta/2` that computes the difference. However if both timestamp come from the same node, the difference will only take in account monotonic time, following good distributed time management practices with the BEAM.
 
+<!-- livebook:{"reevaluate_automatically":true} -->
+
 ```elixir
 before = Measurements.Timestamp.now()
 Process.sleep(1000)
@@ -161,6 +177,8 @@ Measurements.Timestamp.delta(now, before)
 ```
 
 Implicit conversion is also handled, albeit with `System` module directly without relying on `Measurements` features for simplicity.
+
+<!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
 before = Measurements.Timestamp.now(:millisecond)

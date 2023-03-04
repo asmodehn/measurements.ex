@@ -46,12 +46,20 @@ defmodule Measurements.UnitTest do
       assert {:ok, Time} == Unit.module(:microsecond)
       assert {:ok, Length} == Unit.module(:kilometer)
     end
+
+    test "supports nil unit" do
+      assert {:ok, nil} == Unit.module(nil)
+    end
   end
 
   describe "new/2" do
     test "normalizes a unit of any dimension" do
       assert Unit.new(:micrometer) == {:ok, :micrometer}
       assert Unit.new(:millisecond) == {:ok, :millisecond}
+    end
+
+    test "supports nil unit" do
+      assert Unit.new(nil) == {:ok, nil}
     end
 
     test "supports aliases" do
@@ -70,12 +78,22 @@ defmodule Measurements.UnitTest do
       {:ok, converter} = Unit.convert(:meter, :millimeter)
       assert converter.(42) == 42_000
     end
+
+    test "supports nil unit" do
+      {:ok, converter} = Unit.convert(nil, nil)
+      assert converter.(42) == 42
+    end
   end
 
   describe "min/2 " do
     test "returns the unit with smaller scale / more precision for the unit" do
       assert Unit.min(:second, :microsecond) == {:ok, :microsecond}
       assert Unit.min(:meter, :micrometer) == {:ok, :micrometer}
+    end
+
+    test "supports nil unit" do
+      assert Unit.min(nil, nil) == {:ok, nil}
+      assert Unit.min(nil, :second) == {:error, :incompatible_dimension}
     end
   end
 
@@ -84,12 +102,21 @@ defmodule Measurements.UnitTest do
       assert Unit.max(:second, :microsecond) == {:ok, :second}
       assert Unit.max(:meter, :micrometer) == {:ok, :meter}
     end
+
+    test "supports nil unit" do
+      assert Unit.max(nil, nil) == {:ok, nil}
+      assert Unit.max(nil, :second) == {:error, :incompatible_dimension}
+    end
   end
 
   describe "to_string/1" do
     test "provides a string identifier for the unit" do
       assert Unit.to_string(:second) == "s"
       assert Unit.to_string(:millimeter) == "mm"
+    end
+
+    test "supports nil unit" do
+      assert Unit.to_string(nil) == ""
     end
   end
 end
