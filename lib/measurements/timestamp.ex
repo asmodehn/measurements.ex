@@ -6,6 +6,9 @@ defmodule Measurements.Timestamp do
   # hiding Elixir.Process to make sure we do not inadvertently use it
   alias Measurements.Node
 
+  alias Measurements.Unit
+  alias Measurements.Value
+
   @enforce_keys [:node, :monotonic, :unit, :vm_offset]
   defstruct node: nil,
             monotonic: nil,
@@ -31,34 +34,34 @@ defmodule Measurements.Timestamp do
     }
   end
 
-  @spec system_time(t()) :: Measurements.t()
+  @spec system_time(t()) :: Value.t()
   def system_time(%__MODULE__{} = lts) do
     Measurements.time(lts.monotonic + lts.vm_offset, lts.unit)
   end
 
-  @spec system_time(t(), System.time_unit()) :: Time.Value.t()
+  @spec system_time(t(), System.time_unit()) :: Value.t()
   def system_time(%__MODULE__{} = lts, unit) do
     System.convert_time_unit(lts.monotonic + lts.vm_offset, lts.unit, unit)
     |> Measurements.time(unit)
   end
 
-  @spec monotonic_time(t()) :: Time.Value.t()
+  @spec monotonic_time(t()) :: Value.t()
   def monotonic_time(%__MODULE__{} = lts) do
     Measurements.time(lts.monotonic, lts.unit)
   end
 
-  @spec time_offset(t()) :: Time.Value.t()
+  @spec time_offset(t()) :: Value.t()
   def time_offset(%__MODULE__{} = lts) do
     Measurements.time(lts.vm_offset, lts.unit)
   end
 
-  @spec monotonic_time(t(), System.time_unit()) :: Time.Value.t()
+  @spec monotonic_time(t(), System.time_unit()) :: Value.t()
   def monotonic_time(%__MODULE__{} = lts, unit) do
     System.convert_time_unit(lts.monotonic, lts.unit, unit)
     |> Measurements.time(unit)
   end
 
-  @spec time_offset(t(), System.time_unit()) :: Time.Value.t()
+  @spec time_offset(t(), System.time_unit()) :: Value.t()
   def time_offset(%__MODULE__{} = lts, unit) do
     System.convert_time_unit(lts.vm_offset, lts.unit, unit)
     |> Measurements.time(unit)
@@ -173,6 +176,76 @@ defmodule Measurements.Timestamp do
       bef
     end
   end
+
+  @behaviour Value.Behaviour
+  # TODO : protocol instead ??
+  @impl Value.Behaviour
+  def value(%__MODULE__{} = ts), do: system_time(ts).value
+  @impl Value.Behaviour
+  def error(%__MODULE__{} = ts), do: ts.error
+  @impl Value.Behaviour
+  def unit(%__MODULE__{} = ts), do: ts.unit
+
+  @doc """
+  Convert the measurement to the new unit, if the new unit is more precise.
+
+  This will pick the most precise between the measurement's unit and the new unit.
+  Then it will convert the measurement to the chosen unit.
+
+  If no conversion is possible, the original measurement is returned.
+
+  ## Examples
+
+      iex> Measurements.Value.new(42, :second) |> Measurements.Value.add_error(1, :second) |> Measurements.Value.best_convert(:millisecond)
+      %Measurements.Value{value: 42_000, unit: :millisecond, error: 1_000}
+
+      iex> Measurements.Value.new(42, :millisecond) |> Measurements.Value.add_error(1, :millisecond) |> Measurements.Value.best_convert(:second)
+      %Measurements.Value{value: 42, unit: :millisecond, error: 1}
+
+  """
+  @spec best_convert(t, Unit.t()) :: t
+
+  def best_convert(%__MODULE__{unit: u} = m, unit) when u == unit, do: m
+
+  def best_convert(%__MODULE__{} = m, unit) do
+    case Unit.min(m.unit, unit) do
+      {:ok, min_unit} ->
+        # if Unit.min is successful, conversion will always work.
+        {:ok, converter} = Unit.convert(m.unit, min_unit)
+
+        %__MODULE__{
+          node: m.node,
+          monotonic: converter.(m.monotonic),
+          unit: min_unit,
+          vm_offset: converter.(m.vm_offset),
+          error: converter.(m.error)
+        }
+
+      # no conversion possible, just ignore it
+      {:error, :incompatible_dimension} ->
+        m
+    end
+  end
+
+  @doc """
+  The sum of multiple measurements, with implicit unit conversion.
+
+  Only measurements with the same unit dimension will work.
+  Error will be propagated.
+
+  ## Examples
+
+      iex>  m1 = Measurements.time(42, :second) |> Measurements.Value.add_error(1, :second)
+      iex>  m2 = Measurements.time(543, :millisecond) |> Measurements.Value.add_error(3, :millisecond)
+      iex> Measurements.sum(m1, m2)
+      %Measurements.Value{
+        value: 42_543,
+        unit: :millisecond,
+        error: 1_003
+      }
+
+  """
+  def sum(%__MODULE__{} = v1, %__MODULE__{} = v2), do: Value.sum(system_time(v1), system_time(v2))
 end
 
 defimpl String.Chars, for: Measurements.Timestamp do

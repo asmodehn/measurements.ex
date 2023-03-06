@@ -2,6 +2,15 @@ defmodule MeasurementsTest do
   use ExUnit.Case
   doctest Measurements
 
+  import Hammox
+
+  alias Measurements.Timestamp
+
+  alias Measurements.System
+  alias Measurements.Node
+
+  alias Measurements.Value
+
   describe "time/2 " do
     test "create a time measurement" do
       assert Measurements.time(51, :millisecond) == %Measurements.Value{
@@ -76,6 +85,70 @@ defmodule MeasurementsTest do
         Measurements.time(42, :second)
         |> Measurements.sum(Measurements.length(51, :meter))
       end)
+    end
+
+    test "sums two timestamps as a time value" do
+      System.OriginalMock
+      |> expect(:monotonic_time, fn :millisecond -> 42 end)
+      |> expect(:time_offset, fn :millisecond -> 3 end)
+
+      Node.OriginalMock
+      |> expect(:self, fn -> :nonode@A end)
+
+      s1 = Timestamp.now(:millisecond)
+
+      System.OriginalMock
+      |> expect(:monotonic_time, fn :millisecond -> 51 end)
+      |> expect(:time_offset, fn :millisecond -> 4 end)
+
+      Node.OriginalMock
+      |> expect(:self, fn -> :nonode@A end)
+
+      s2 = Timestamp.now(:millisecond)
+
+      assert Measurements.sum(s2, s1) == %Value{
+               unit: :millisecond,
+               value: 42 + 3 + 51 + 4,
+               error: 0
+             }
+    end
+
+    test "sums a timestamp and a time value" do
+      System.OriginalMock
+      |> expect(:monotonic_time, fn :millisecond -> 42 end)
+      |> expect(:time_offset, fn :millisecond -> 3 end)
+
+      Node.OriginalMock
+      |> expect(:self, fn -> :nonode@A end)
+
+      s1 = Timestamp.now(:millisecond)
+
+      s2 = Measurements.time(51, :second, 7)
+
+      assert Measurements.sum(s1, s2) == %Value{
+               unit: :millisecond,
+               value: 42 + 3 + 51_000,
+               error: 7_000
+             }
+    end
+
+    test "sums a time value and a timestamp" do
+      System.OriginalMock
+      |> expect(:monotonic_time, fn :millisecond -> 42 end)
+      |> expect(:time_offset, fn :millisecond -> 3 end)
+
+      Node.OriginalMock
+      |> expect(:self, fn -> :nonode@A end)
+
+      s1 = Timestamp.now(:millisecond)
+
+      s2 = Measurements.time(51, :second, 7)
+
+      assert Measurements.sum(s2, s1) == %Value{
+               unit: :millisecond,
+               value: 42 + 3 + 51_000,
+               error: 7_000
+             }
     end
   end
 

@@ -32,22 +32,26 @@ defmodule Measurements.Value do
   @impl Behaviour
   def unit(%__MODULE__{} = v), do: v.unit
 
-  @behaviour Access
+  # Unneeded ??
+  # @behaviour Access
 
-  @impl Access
+  # OR ONLY PARTIAL IMPLEMENTATINON POSIBLE ??
+  # @impl Access
   def fetch(%__MODULE__{} = v, key) do
     Map.fetch(v, key)
   end
 
-  @impl Access
-  def get_and_update(%__MODULE__{} = v, key, fun) do
-    Map.get_and_update(v, key, fun)
-  end
+  # OR maybe gather new() / add_errr() / convert() via Access protocol ?
 
-  @impl Access
-  def pop(%__MODULE__{} = v, key) do
-    Map.get_and_update(v, key, fn v -> {v, nil} end)
-  end
+  # @impl Access
+  # def get_and_update(%__MODULE__{} = v, key, fun) do
+  #   Map.get_and_update(v, key, fun)
+  # end
+
+  # @impl Access
+  # def pop(%__MODULE__{} = v, key) do
+  #   Map.get_and_update(v, key, fn v -> {v, nil} end)
+  # end
 
   @doc """
   Generic Measurements.Value. Unit indicates the dimension.
@@ -150,6 +154,45 @@ defmodule Measurements.Value do
       # no conversion possible, just ignore it
       {:error, :incompatible_dimension} ->
         m
+    end
+  end
+
+  @doc """
+  The sum of multiple measurements, with implicit unit conversion.
+
+  Only measurements with the same unit dimension will work.
+  Error will be propagated.
+
+  ## Examples
+
+      iex>  m1 = Measurements.time(42, :second) |> Measurements.Value.add_error(1, :second)
+      iex>  m2 = Measurements.time(543, :millisecond) |> Measurements.Value.add_error(3, :millisecond)
+      iex> Measurements.sum(m1, m2)
+      %Measurements.Value{
+        value: 42_543,
+        unit: :millisecond,
+        error: 1_003
+      }
+
+  """
+  def sum(%__MODULE__{} = v1, %__MODULE__{} = v2)
+      when v1.unit == v2.unit do
+    new(
+      v1.value + v2.value,
+      v1.unit,
+      v1.error + v2.error
+    )
+  end
+
+  def sum(%__MODULE__{} = v1, %__MODULE__{} = v2) do
+    cond do
+      Unit.dimension(v1.unit) == Unit.dimension(v2.unit) ->
+        v1 = best_convert(v1, v2.unit)
+        v2 = best_convert(v2, v1.unit)
+        sum(v1, v2)
+
+      true ->
+        raise ArgumentError, message: "#{v1} and #{v2} have incompatible unit dimension"
     end
   end
 end

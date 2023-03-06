@@ -68,32 +68,72 @@ defmodule Measurements.ValueTest do
     end
   end
 
-  describe "Access protocol: " do
-    test "fetch/2 implemented" do
-      v = Value.new(51, :millisecond, 33)
-      assert Value.fetch(v, :value) == {:ok, 51}
-      assert Value.fetch(v, :error) == {:ok, 33}
-      assert Value.fetch(v, :unit) == {:ok, :millisecond}
+  describe "sum/2" do
+    test "sums two measurements values of same dimension" do
+      assert Value.new(42, :second)
+             |> Value.sum(Value.new(51, :second)) == %Value{
+               value: 42 + 51,
+               unit: :second
+             }
     end
 
-    test "get_and_update/3 implemented" do
-      v = Value.new(51, :millisecond, 33)
-
-      assert Value.get_and_update(v, :value, fn n -> {n, n - 9} end) ==
-               {51, %Measurements.Value{value: 42, unit: :millisecond, error: 33}}
-
-      assert Value.get_and_update(v, :error, fn n -> {n, n + 9} end) ==
-               {33, %Measurements.Value{value: 51, unit: :millisecond, error: 42}}
-
-      assert Value.get_and_update(v, :unit, fn :millisecond -> {:millisecond, :microsecond} end) ==
-               {:millisecond, %Measurements.Value{value: 51, unit: :microsecond, error: 33}}
+    test "sums two measurements values with error propagation" do
+      assert Value.new(42, :second, 3)
+             |> Value.sum(Value.new(51, :second, 4)) == %Value{
+               value: 42 + 51,
+               unit: :second,
+               error: 4 + 3
+             }
     end
 
-    test "pop/2 implemented by setting field to nil" do
-      v = Value.new(51, :millisecond, 33)
-      assert Value.pop(v, :value) == {51, %Value{value: nil, unit: :millisecond, error: 33}}
-      assert Value.pop(v, :error) == {33, %Value{value: 51, unit: :millisecond, error: nil}}
-      assert Value.pop(v, :unit) == {:millisecond, %Value{value: 51, unit: nil, error: 33}}
+    test "sums two measurements values with conversion to best unit" do
+      assert Value.new(42_000, :millisecond, 3)
+             |> Value.sum(Value.new(51, :second, 4)) == %Value{
+               value: 42_000 + 51_000,
+               unit: :millisecond,
+               error: 4_000 + 3
+             }
     end
+
+    test "prevent sums of two measurements of units with different dimension" do
+      assert_raise(ArgumentError, fn ->
+        Value.new(42, :second)
+        |> Value.sum(Value.new(51, :meter))
+      end)
+    end
+  end
+
+  # Uneeded ??
+  # describe "Access protocol: " do
+  #   test "fetch/2 implemented" do
+  #     v = Value.new(51, :millisecond, 33)
+  #     assert Value.fetch(v, :value) == {:ok, 51}
+  #     assert Value.fetch(v, :error) == {:ok, 33}
+  #     assert Value.fetch(v, :unit) == {:ok, :millisecond}
+  #   end
+
+  #   test "get_and_update/3 implemented" do
+  #     v = Value.new(51, :millisecond, 33)
+
+  #     assert Value.get_and_update(v, :value, fn n -> {n, n - 9} end) ==
+  #              {51, %Measurements.Value{value: 42, unit: :millisecond, error: 33}}
+
+  #     assert Value.get_and_update(v, :error, fn n -> {n, n + 9} end) ==
+  #              {33, %Measurements.Value{value: 51, unit: :millisecond, error: 42}}
+
+  #     assert Value.get_and_update(v, :unit, fn :millisecond -> {:millisecond, :microsecond} end) ==
+  #              {:millisecond, %Measurements.Value{value: 51, unit: :microsecond, error: 33}}
+  #   end
+
+  #   test "pop/2 implemented by setting field to nil" do
+  #     v = Value.new(51, :millisecond, 33)
+  #     assert Value.pop(v, :value) == {51, %Value{value: nil, unit: :millisecond, error: 33}}
+  #     assert Value.pop(v, :error) == {33, %Value{value: 51, unit: :millisecond, error: nil}}
+  #     assert Value.pop(v, :unit) == {:millisecond, %Value{value: 51, unit: nil, error: 33}}
+  #   end
+  # end
+
+  describe "String.Chars protocol" do
+    # TODO
   end
 end

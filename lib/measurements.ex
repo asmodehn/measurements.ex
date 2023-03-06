@@ -97,18 +97,21 @@ defmodule Measurements do
       }
 
   """
-  def sum(m1, m2) do
+
+  def sum(%module{} = m1, %module{} = m2), do: module.sum(m1, m2)
+
+  def sum(%impl1{} = m1, %impl2{} = m2) do
     cond do
-      m1[:unit] == m2[:unit] ->
+      impl1.unit(m1) == impl2.unit(m2) ->
         Value.new(
-          m1[:value] + m2[:value],
-          m1[:unit],
-          m1[:error] + m2[:error]
+          impl1.value(m1) + impl2.value(m2),
+          impl1.unit(m1),
+          impl1.error(m1) + impl2.error(m2)
         )
 
-      Unit.dimension(m1[:unit]) == Unit.dimension(m2[:unit]) ->
-        m1 = Value.best_convert(m1, m2[:unit])
-        m2 = Value.best_convert(m2, m1[:unit])
+      Unit.dimension(impl1.unit(m1)) == Unit.dimension(impl2.unit(m2)) ->
+        m1 = impl1.best_convert(m1, impl2.unit(m2))
+        m2 = impl2.best_convert(m2, impl1.unit(m1))
         sum(m1, m2)
 
       true ->
