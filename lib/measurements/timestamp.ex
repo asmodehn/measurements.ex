@@ -145,17 +145,29 @@ defmodule Measurements.Timestamp do
   #   }
   # end
 
-  def convert(%__MODULE__{} = lts, unit) do
+  def convert(%__MODULE__{} = lts, unit, :system) do
     nu = System.Extra.normalize_time_unit(unit)
-    System.convert_time_unit(lts.monotonic + lts.vm_offset, lts.unit, unit)
 
     %__MODULE__{
       node: lts.node,
       unit: nu,
-      monotonic: System.convert_time_unit(lts.monotonic, lts.unit, unit),
-      vm_offset: System.convert_time_unit(lts.vm_offset, lts.unit, unit)
+      monotonic: System.convert_time_unit(lts.monotonic, lts.unit, nu),
+      vm_offset: System.convert_time_unit(lts.vm_offset, lts.unit, nu),
+      error: System.convert_time_unit(lts.error, lts.unit, nu)
     }
   end
+
+  # Covering common behaviour with Value
+  def convert(%__MODULE__{} = m, unit, :force), do: convert(m, unit, :system)
+  # {:ok, converter} = Unit.convert(m.unit, unit)
+  #   %__MODULE__{
+  #         node: m.node,
+  #         monotonic: converter.(m.monotonic),
+  #         unit: min_unit,
+  #         vm_offset: converter.(m.vm_offset),
+  #         error: converter.(m.error)
+  #       }
+  # end
 
   @spec wake_up_at(t()) :: t()
   def wake_up_at(%__MODULE__{} = lts) do
@@ -195,35 +207,27 @@ defmodule Measurements.Timestamp do
   If no conversion is possible, the original measurement is returned.
 
   ## Examples
+      #TODO : with timestamp now and mocks !
+      # iex> Measurements.Timestamp.new(42, :second) |> Measurements.Timestamp.convert(:millisecond)
+      # %Measurements.Timestamp{value: 42_000, unit: :millisecond, error: 1_000}
 
-      iex> Measurements.Value.new(42, :second) |> Measurements.Value.add_error(1, :second) |> Measurements.Value.best_convert(:millisecond)
-      %Measurements.Value{value: 42_000, unit: :millisecond, error: 1_000}
-
-      iex> Measurements.Value.new(42, :millisecond) |> Measurements.Value.add_error(1, :millisecond) |> Measurements.Value.best_convert(:second)
-      %Measurements.Value{value: 42, unit: :millisecond, error: 1}
+      # iex> Measurements.Timestamp.new(42, :millisecond) |> Measurements.Timestamp.convert(:second)
+      # %Measurements.Timestamp{value: 42, unit: :millisecond, error: 1}
 
   """
-  @spec best_convert(t, Unit.t()) :: t
+  @spec convert(t, Unit.t()) :: t
 
-  def best_convert(%__MODULE__{unit: u} = m, unit) when u == unit, do: m
+  def convert(%__MODULE__{unit: u} = m, unit) when u == unit, do: m
 
-  def best_convert(%__MODULE__{} = m, unit) do
+  def convert(%__MODULE__{} = m, unit) do
     case Unit.min(m.unit, unit) do
       {:ok, min_unit} ->
         # if Unit.min is successful, conversion will always work.
-        {:ok, converter} = Unit.convert(m.unit, min_unit)
-
-        %__MODULE__{
-          node: m.node,
-          monotonic: converter.(m.monotonic),
-          unit: min_unit,
-          vm_offset: converter.(m.vm_offset),
-          error: converter.(m.error)
-        }
+        convert(m, min_unit, :force)
 
       # no conversion possible, just ignore it
       {:error, :incompatible_dimension} ->
-        m
+        raise ArgumentError, message: "#{unit} dimension is not compatible with #{m.unit}"
     end
   end
 

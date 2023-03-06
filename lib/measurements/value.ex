@@ -42,6 +42,7 @@ defmodule Measurements.Value do
   end
 
   # OR maybe gather new() / add_errr() / convert() via Access protocol ?
+  # OR better custom protocol ???
 
   # @impl Access
   # def get_and_update(%__MODULE__{} = v, key, fun) do
@@ -128,33 +129,37 @@ defmodule Measurements.Value do
 
   ## Examples
 
-      iex> Measurements.Value.new(42, :second) |> Measurements.Value.add_error(1, :second) |> Measurements.Value.best_convert(:millisecond)
+      iex> Measurements.Value.new(42, :second) |> Measurements.Value.add_error(1, :second) |> Measurements.Value.convert(:millisecond)
       %Measurements.Value{value: 42_000, unit: :millisecond, error: 1_000}
 
-      iex> Measurements.Value.new(42, :millisecond) |> Measurements.Value.add_error(1, :millisecond) |> Measurements.Value.best_convert(:second)
+      iex> Measurements.Value.new(42, :millisecond) |> Measurements.Value.add_error(1, :millisecond) |> Measurements.Value.convert(:second)
       %Measurements.Value{value: 42, unit: :millisecond, error: 1}
 
   """
-  @spec best_convert(t, Unit.t()) :: t
+  @spec convert(t, Unit.t()) :: t
 
-  def best_convert(%__MODULE__{unit: u} = m, unit) when u == unit, do: m
+  def convert(%__MODULE__{unit: u} = m, unit) when u == unit, do: m
 
-  def best_convert(%__MODULE__{} = m, unit) do
+  def convert(%__MODULE__{} = m, unit) do
     case Unit.min(m.unit, unit) do
       {:ok, min_unit} ->
         # if Unit.min is successful, conversion will always work.
-        {:ok, converter} = Unit.convert(m.unit, min_unit)
-
-        new(
-          converter.(m.value),
-          min_unit,
-          converter.(m.error)
-        )
+        convert(m, min_unit, :force)
 
       # no conversion possible, just ignore it
       {:error, :incompatible_dimension} ->
-        m
+        raise ArgumentError, message: "#{unit} dimension is not compatible with #{m.unit}"
     end
+  end
+
+  def convert(%__MODULE__{} = m, unit, :force) do
+    {:ok, converter} = Unit.convert(m.unit, unit)
+
+    new(
+      converter.(m.value),
+      unit,
+      converter.(m.error)
+    )
   end
 
   @doc """
@@ -187,8 +192,8 @@ defmodule Measurements.Value do
   def sum(%__MODULE__{} = v1, %__MODULE__{} = v2) do
     cond do
       Unit.dimension(v1.unit) == Unit.dimension(v2.unit) ->
-        v1 = best_convert(v1, v2.unit)
-        v2 = best_convert(v2, v1.unit)
+        v1 = convert(v1, v2.unit)
+        v2 = convert(v2, v1.unit)
         sum(v1, v2)
 
       true ->

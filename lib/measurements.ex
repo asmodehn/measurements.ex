@@ -110,8 +110,8 @@ defmodule Measurements do
         )
 
       Unit.dimension(impl1.unit(m1)) == Unit.dimension(impl2.unit(m2)) ->
-        m1 = impl1.best_convert(m1, impl2.unit(m2))
-        m2 = impl2.best_convert(m2, impl1.unit(m1))
+        m1 = impl1.convert(m1, impl2.unit(m2))
+        m2 = impl2.convert(m2, impl1.unit(m1))
         sum(m1, m2)
 
       true ->
@@ -164,8 +164,8 @@ defmodule Measurements do
         Value.new(m1[:value] - m2[:value], m1[:unit], m1[:error] + m2[:error])
 
       Unit.dimension(m1[:unit]) == Unit.dimension(m2[:unit]) ->
-        m1 = Value.best_convert(m1, m2[:unit])
-        m2 = Value.best_convert(m2, m1[:unit])
+        m1 = Value.convert(m1, m2[:unit])
+        m2 = Value.convert(m2, m1[:unit])
         delta(m1, m2)
 
       true ->
@@ -212,8 +212,8 @@ defmodule Measurements do
         Value.new(value, nil, error)
 
       Unit.dimension(m1[:unit]) == Unit.dimension(m2[:unit]) ->
-        m1 = Value.best_convert(m1, m2[:unit])
-        m2 = Value.best_convert(m2, m1[:unit])
+        m1 = Value.convert(m1, m2[:unit])
+        m2 = Value.convert(m2, m1[:unit])
         ratio(m1, m2)
 
       true ->

@@ -50,10 +50,10 @@ defmodule Measurements.ValueTest do
     end
   end
 
-  describe "best_convert/2" do
+  describe "convert/2" do
     test "converts if the unit precision is greater than current one" do
       assert Value.new(42, :millisecond)
-             |> Value.best_convert(:microsecond) == %Value{
+             |> Value.convert(:microsecond) == %Value{
                value: 42_000,
                unit: :microsecond
              }
@@ -61,9 +61,26 @@ defmodule Measurements.ValueTest do
 
     test "doesnt do anything if precision is less than current one" do
       assert Value.new(42, :millisecond)
-             |> Value.best_convert(:second) == %Value{
+             |> Value.convert(:second) == %Value{
                value: 42,
                unit: :millisecond
+             }
+    end
+
+    test "errors if unit dimension is incompatible" do
+      assert_raise ArgumentError, fn ->
+        Value.new(42, :millisecond)
+        |> Value.convert(:meter)
+      end
+    end
+  end
+
+  describe "convert/3 with extra: force parameter" do
+    test "does force a unit conversion" do
+      assert Value.new(42, :millisecond)
+             |> Value.convert(:second, :force) == %Value{
+               value: 0.042,
+               unit: :second
              }
     end
   end
