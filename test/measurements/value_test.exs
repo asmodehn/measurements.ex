@@ -128,6 +128,24 @@ defmodule Measurements.ValueTest do
     end
   end
 
+  describe "scale/2" do
+    test "scale a measurement by an integer" do
+      assert Value.new(42, :second) |> Value.scale(10) == %Value{
+               value: 420,
+               unit: :second
+             }
+    end
+
+    test "scale a measurement with the associated error" do
+      assert Value.new(42_000, :millisecond, 3)
+             |> Value.scale(10) == %Value{
+               value: 420_000,
+               unit: :millisecond,
+               error: 30
+             }
+    end
+  end
+
   # Uneeded ??
   # describe "Access protocol: " do
   #   test "fetch/2 implemented" do

@@ -58,4 +58,46 @@ defmodule Measurements.ErrorTest do
       end
     end
   end
+
+  describe "sum/2" do
+    test "sums two measurements errors of same dimension" do
+      assert Error.new(42, :second)
+             |> Error.sum(Error.new(51, :second)) == %Error{
+               error: 42 + 51,
+               unit: :second
+             }
+    end
+
+    test "sums two measurements values with error propagation" do
+      assert Error.new(42, :second)
+             |> Error.sum(Error.new(51, :second)) == %Error{
+               error: 42 + 51,
+               unit: :second
+             }
+    end
+
+    test "sums two measurements values with conversion to best unit" do
+      assert Error.new(42_000, :millisecond)
+             |> Error.sum(Error.new(51, :second)) == %Error{
+               error: 42_000 + 51_000,
+               unit: :millisecond
+             }
+    end
+
+    test "prevent sums of two measurements of units with different dimension" do
+      assert_raise(ArgumentError, fn ->
+        Error.new(42, :second)
+        |> Error.sum(Error.new(51, :meter))
+      end)
+    end
+  end
+
+  describe "scale/2" do
+    test "scale a measurement by an integer" do
+      assert Error.new(42, :second) |> Error.scale(10) == %Error{
+               error: 420,
+               unit: :second
+             }
+    end
+  end
 end

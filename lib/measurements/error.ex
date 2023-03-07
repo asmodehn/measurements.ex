@@ -14,6 +14,43 @@ defmodule Measurements.Error do
           unit: Unit.t()
         }
 
+  defmodule Behaviour do
+    @type error :: non_neg_integer | float
+    @type unit :: Measurements.Unit.t()
+
+    @callback error(Measurements.Value.t()) :: error
+    @callback unit(Measurements.Value.t()) :: unit
+  end
+
+  @behaviour Behaviour
+
+  @impl Behaviour
+  def error(%__MODULE__{} = v), do: v.error
+  @impl Behaviour
+  def unit(%__MODULE__{} = v), do: v.unit
+
+  # Unneeded ??
+  # @behaviour Access
+
+  # OR ONLY PARTIAL IMPLEMENTATINON POSIBLE ??
+  # @impl Access
+  def fetch(%__MODULE__{} = v, key) do
+    Map.fetch(v, key)
+  end
+
+  # OR maybe gather new() / add_errr() / convert() via Access protocol ?
+  # OR better custom protocol ???
+
+  # @impl Access
+  # def get_and_update(%__MODULE__{} = v, key, fun) do
+  #   Map.get_and_update(v, key, fun)
+  # end
+
+  # @impl Access
+  # def pop(%__MODULE__{} = v, key) do
+  #   Map.get_and_update(v, key, fn v -> {v, nil} end)
+  # end
+
   @spec new(integer, Unit.t()) :: t
   def new(error, unit) do
     # normalize the unit
@@ -57,12 +94,68 @@ defmodule Measurements.Error do
     end
   end
 
-  # TODO
-  # def sum(%__MODULE__{} = e, increment) do
-  # 	%__MODULE__{}
-  # end
+  @doc """
+  The sum of multiple measurements, with implicit unit conversion.
 
-  # def scale(error, scale) do
+  Only measurements with the same unit dimension will work.
+  Error will be propagated.
 
-  # end
+  ## Examples
+
+      iex>  m1 = Measurements.Error.new(42, :second) 
+      iex>  m2 = Measurements.Error.new(543, :millisecond)
+      iex> Measurements.Error.sum(m1, m2)
+      %Measurements.Error{
+        error: 42_543,
+        unit: :millisecond
+      }
+
+  """
+  def sum(%__MODULE__{} = e1, %__MODULE__{} = e2)
+      when e1.unit == e2.unit do
+    new(e1.error + e2.error, e1.unit)
+  end
+
+  def sum(%__MODULE__{} = e1, %__MODULE__{} = e2) do
+    cond do
+      Unit.dimension(e1.unit) == Unit.dimension(e2.unit) ->
+        e1 = convert(e1, e2.unit)
+        e2 = convert(e2, e1.unit)
+        sum(e1, e2)
+
+      true ->
+        raise ArgumentError, message: "#{e1} and #{e2} have incompatible unit dimension"
+    end
+  end
+
+  @doc """
+  Scales a measurement by a number.
+
+  No unit conversion happens at this stage for simplicity, and to keep the scale of the resulting value obvious.
+  Error will be scaled by the same number, but always remains positive.
+
+  ## Examples
+
+        iex>  m1 = Measurements.Error.new(543, :millisecond)
+        iex> Measurements.Error.scale(m1, 10)
+        %Measurements.Error{
+          error: 5430,
+          unit: :millisecond
+        }
+
+  """
+  def scale(%__MODULE__{} = e, n) when is_integer(n) do
+    new(abs(e.error * n), e.unit)
+  end
+end
+
+defimpl String.Chars, for: Measurements.Error do
+  def to_string(%Measurements.Error{
+        error: e,
+        unit: unit
+      }) do
+    u = Measurements.Unit.to_string(unit)
+
+    "±#{e} #{u}"
+  end
 end

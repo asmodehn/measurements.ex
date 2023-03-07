@@ -204,6 +204,26 @@ defmodule Measurements.Value do
         raise ArgumentError, message: "#{v1} and #{v2} have incompatible unit dimension"
     end
   end
+
+  @doc """
+  Scales a measurement by a number.
+
+  No unit conversion happens at this stage for simplicity, and to keep the scale of the resulting value obvious.
+  Error will be scaled by the same number, but always remains positive.
+
+  ## Examples
+
+        iex>  m1 = Measurements.Value.new(543, :millisecond)
+        iex> Measurements.Value.scale(m1, 10)
+        %Measurements.Value{
+          value: 5430,
+          unit: :millisecond
+        }
+
+  """
+  def scale(%__MODULE__{} = e, n) when is_integer(n) do
+    new(e.value * n, e.unit, abs(e.error * n))
+  end
 end
 
 defimpl String.Chars, for: Measurements.Value do
