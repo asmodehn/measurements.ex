@@ -67,11 +67,12 @@ defmodule Measurements.ValueTest do
              }
     end
 
-    test "errors if unit dimension is incompatible" do
-      assert_raise ArgumentError, fn ->
-        Value.new(42, :millisecond)
-        |> Value.convert(:meter)
-      end
+    test "ignored if unit dimension is incompatible" do
+      assert Value.new(42, :millisecond)
+             |> Value.convert(:meter) == %Value{
+               value: 42,
+               unit: :millisecond
+             }
     end
   end
 
@@ -82,6 +83,13 @@ defmodule Measurements.ValueTest do
                value: 0.042,
                unit: :second
              }
+    end
+
+    test "returns error when unit dimension is incompatible" do
+      assert_raise ArgumentError, fn ->
+        Value.new(42, :millisecond)
+        |> Value.convert(:meter, :force)
+      end
     end
   end
 

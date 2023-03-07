@@ -83,6 +83,11 @@ defmodule Measurements.UnitTest do
       {:ok, converter} = Unit.convert(nil, nil)
       assert converter.(42) == 42
     end
+
+    test "return :incompatible_dimension error when dimension dont match" do
+      {:error, reason} = Unit.convert(:second, :millimeter)
+      assert reason == :incompatible_dimension
+    end
   end
 
   describe "min/2 " do
@@ -94,6 +99,11 @@ defmodule Measurements.UnitTest do
     test "supports nil unit" do
       assert Unit.min(nil, nil) == {:ok, nil}
       assert Unit.min(nil, :second) == {:error, :incompatible_dimension}
+    end
+
+    test "return :incompatible_dimension error when dimension dont match" do
+      {:error, reason} = Unit.min(:second, :millimeter)
+      assert reason == :incompatible_dimension
     end
   end
 

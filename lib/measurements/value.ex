@@ -148,18 +148,22 @@ defmodule Measurements.Value do
 
       # no conversion possible, just ignore it
       {:error, :incompatible_dimension} ->
-        raise ArgumentError, message: "#{unit} dimension is not compatible with #{m.unit}"
+        m
     end
   end
 
   def convert(%__MODULE__{} = m, unit, :force) do
-    {:ok, converter} = Unit.convert(m.unit, unit)
+    case Unit.convert(m.unit, unit) do
+      {:ok, converter} ->
+        new(
+          converter.(m.value),
+          unit,
+          converter.(m.error)
+        )
 
-    new(
-      converter.(m.value),
-      unit,
-      converter.(m.error)
-    )
+      {:error, :incompatible_dimension} ->
+        raise ArgumentError, message: "#{unit} dimension is not compatible with #{m.unit}"
+    end
   end
 
   @doc """

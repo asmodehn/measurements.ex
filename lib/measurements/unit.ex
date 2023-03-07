@@ -163,6 +163,9 @@ defmodule Measurements.Unit do
         {:ok, to} = scale(to_unit)
         {:ok, Scale.convert(Scale.ratio(from, to))}
 
+      {:ok, _another_dim} ->
+        {:error, :incompatible_dimension}
+
       {:error, what} ->
         {:error, what}
     end
