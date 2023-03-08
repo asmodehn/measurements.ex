@@ -14,3 +14,5 @@ defmodule Measurements.Unit.Unitable do
   @callback unit(Measurements.Scale.t(), Measurements.Dimension.t()) ::
               {:ok, Unit.t()} | {:error, (value -> value), Unit.t()}
 end
+
+# TODO : cleaner Dimensional algebra ?
