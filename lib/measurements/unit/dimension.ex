@@ -54,7 +54,7 @@ defmodule Measurements.Unit.Dimension do
     %{d | lintensity: d.lintensity + n}
   end
 
-  defdelegate prod(d1, d2), to: Measurements.Multiplicative.Semigroup, as: :product
+  defdelegate product(d1, d2), to: Measurements.Multiplicative.Semigroup, as: :product
 
   defdelegate ratio(d1, d2), to: Measurements.Multiplicative.Group, as: :ratio
 end
@@ -115,16 +115,15 @@ definst Measurements.Multiplicative.Monoid, for: Measurements.Unit.Dimension do
   end
 end
 
-# definst Measurements.Multiplicative.Group, for: Measurements.Unit.Dimension do
-
-#   def inverse(%Measurements.Unit.Dimension{} = d) do
-#     d
-#     |> Map.update!(:time, &(-&1))
-#     |> Map.update!(:length, &(-&1))
-#     |> Map.update!(:mass, &(-&1))
-#     |> Map.update!(:current, &(-&1))
-#     |> Map.update!(:temperature, &(-&1))
-#     |> Map.update!(:substance, &(-&1))
-#     |> Map.update!(:lintensity, &(-&1))
-#   end
-# end
+definst Measurements.Multiplicative.Group, for: Measurements.Unit.Dimension do
+  def inverse(%Measurements.Unit.Dimension{} = d) do
+    d
+    |> Map.update!(:time, &(-&1))
+    |> Map.update!(:length, &(-&1))
+    |> Map.update!(:mass, &(-&1))
+    |> Map.update!(:current, &(-&1))
+    |> Map.update!(:temperature, &(-&1))
+    |> Map.update!(:substance, &(-&1))
+    |> Map.update!(:lintensity, &(-&1))
+  end
+end

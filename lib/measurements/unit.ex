@@ -34,6 +34,7 @@ defmodule Measurements.Unit do
 
   alias Measurements.Unit.Time
   alias Measurements.Unit.Length
+  alias Measurements.Unit.Derived
 
   alias Measurements.Unit.Scale
   alias Measurements.Unit.Dimension
@@ -111,6 +112,21 @@ defmodule Measurements.Unit do
       {:error, :unit_module_not_found} ->
         raise RuntimeError, message: "#{unit} not found in Measurements.Unit.*"
     end
+  end
+
+  # To retrieve a unit atom from a scale and dimension
+  def new(%Scale{} = s, %Dimension{time: t, length: 0} = d) when t != 0 do
+    Time.unit(s, d)
+  end
+
+  def new(%Scale{} = s, %Dimension{time: 0, length: l} = d) when l != 0 do
+    Length.unit(s, d)
+  end
+
+  # else it is a derived unit
+
+  def new(%Scale{} = s, %Dimension{} = d) do
+    Derived.unit(s, d)
   end
 
   @doc """
@@ -225,5 +241,65 @@ defmodule Measurements.Unit do
   def to_string(unit) do
     {:ok, unit_module} = module(unit)
     unit_module.to_string(unit)
+  end
+
+  @doc """
+  Sinc unit is an atom, protocol cannot dispatch on it.
+  However we can rely on scale and dimension of the unit
+  """
+  @spec product(t, t) :: t
+  def product(u1, u2) do
+    with {^u1, {:ok, s1}, {:ok, d1}} <-
+           {u1, Measurements.Unit.scale(u1), Measurements.Unit.dimension(u1)},
+         {^u2, {:ok, s2}, {:ok, d2}} <-
+           {u2, Measurements.Unit.scale(u2), Measurements.Unit.dimension(u2)} do
+      Measurements.Unit.new(
+        Measurements.Unit.Scale.prod(s1, s2),
+        Measurements.Unit.Dimension.product(d1, d2)
+      )
+    else
+      {unit, {:error, reason}, {:ok, d}} ->
+        raise ArgumentError,
+          message: "#{unit} has a dimension of #{d} but scale/1 gives error: #{reason}"
+
+      {unit, {:ok, s}, {:error, reason}} ->
+        raise ArgumentError,
+          message: "#{unit} has a scale of #{s} but dimension/1 gives error: #{reason}"
+
+      {unit, {:error, reason_s}, {:error, reason_d}} ->
+        raise ArgumentError,
+          message:
+            "#{unit} dimension/1 gives error: #{reason_d} and scales/1 gives error: #{reason_s}"
+    end
+  end
+
+  @doc """
+  Sinc unit is an atom, protocol cannot dispatch on it.
+  However we can rely on scale and dimension of the unit
+  """
+  @spec ratio(t, t) :: t
+  def ratio(u1, u2) do
+    with {^u1, {:ok, s1}, {:ok, d1}} <-
+           {u1, Measurements.Unit.scale(u1), Measurements.Unit.dimension(u1)},
+         {^u2, {:ok, s2}, {:ok, d2}} <-
+           {u2, Measurements.Unit.scale(u2), Measurements.Unit.dimension(u2)} do
+      Measurements.Unit.new(
+        Measurements.Unit.Scale.ratio(s1, s2),
+        Measurements.Unit.Dimension.ratio(d1, d2)
+      )
+    else
+      {unit, {:error, reason}, {:ok, d}} ->
+        raise ArgumentError,
+          message: "#{unit} has a dimension of #{d} but scale/1 gives error: #{reason}"
+
+      {unit, {:ok, s}, {:error, reason}} ->
+        raise ArgumentError,
+          message: "#{unit} has a scale of #{s} but dimension/1 gives error: #{reason}"
+
+      {unit, {:error, reason_s}, {:error, reason_d}} ->
+        raise ArgumentError,
+          message:
+            "#{unit} dimension/1 gives error: #{reason_d} and scales/1 gives error: #{reason_s}"
+    end
   end
 end

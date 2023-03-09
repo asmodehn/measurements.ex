@@ -171,6 +171,45 @@ defmodule Measurements.Unit.Time do
     end
   end
 
+  def unit(%Scale{coefficient: 1} = s, %Dimension{
+        time: t,
+        length: 0,
+        mass: 0,
+        current: 0,
+        temperature: 0,
+        substance: 0,
+        lintensity: 0
+      }) do
+    cond do
+      s.magnitude == -9 * t ->
+        {:ok, String.to_atom(Atom.to_string(nanosecond()) <> "_#{t}")}
+
+      s.magnitude < -6 * t ->
+        {:error, Scale.convert(%{s | magnitude: s.magnitude + 9 * t}),
+         String.to_atom(Atom.to_string(nanosecond()) <> "_#{t}")}
+
+      s.magnitude == -6 * t ->
+        {:ok, String.to_atom(Atom.to_string(microsecond()) <> "_#{t}")}
+
+      s.magnitude < -3 * t ->
+        {:error, Scale.convert(%{s | magnitude: s.magnitude + 6 * t}),
+         String.to_atom(Atom.to_string(microsecond()) <> "_#{t}")}
+
+      s.magnitude == -3 * t ->
+        {:ok, String.to_atom(Atom.to_string(millisecond()) <> "_#{t}")}
+
+      s.magnitude < 0 ->
+        {:error, Scale.convert(%{s | magnitude: s.magnitude + 3 * t}),
+         String.to_atom(Atom.to_string(millisecond()) <> "_#{t}")}
+
+      s.magnitude == 0 ->
+        {:ok, String.to_atom(Atom.to_string(second()) <> "_#{t}")}
+
+      true ->
+        {:error, Scale.convert(s), String.to_atom(Atom.to_string(second()) <> "_#{t}")}
+    end
+  end
+
   @spec to_string(atom) :: String.t()
   def to_string(unit) when is_atom(unit) do
     case unit do

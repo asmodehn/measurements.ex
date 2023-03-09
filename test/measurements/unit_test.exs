@@ -129,4 +129,27 @@ defmodule Measurements.UnitTest do
       assert Unit.to_string(nil) == ""
     end
   end
+
+  describe "product/2" do
+    test "multiplies unrelated units when possible and reorder them as usual" do
+      assert Unit.product(:second, :meter) == {:ok, :meter_second}
+    end
+
+    test "multiplies related unit increasing corresponding dimension in atom" do
+      assert Unit.product(:second, :second) == {:ok, :second_2}
+    end
+
+    test "multiplies related unit with different scales, converting where needed" do
+      {:error, convert_value, :millisecond_2} = Unit.product(:second, :millisecond)
+
+      # we need to recover a factor of 1_000 since millisecond is squared, second has been converted to millisecond
+      assert convert_value.(42) == 42_000
+    end
+  end
+
+  # describe "ratio/2" do
+  #   test "divides unrelated units when possible" do
+  #     assert Unit.ratio(:meter, :second) == {:ok, :meter_per_second}
+  #   end
+  # end
 end

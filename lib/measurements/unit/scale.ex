@@ -21,28 +21,30 @@ defmodule Measurements.Unit.Scale do
     }
   end
 
-  # TODO :replace by multiplicative group structure...
-  def prod(%__MODULE__{} = s1, %__MODULE__{} = s2) do
-    %__MODULE__{
-      magnitude: s1.magnitude + s2.magnitude,
-      coefficient: s1.coefficient * s2.coefficient
-    }
-  end
+  defdelegate prod(d1, d2), to: Measurements.Multiplicative.Semigroup, as: :product
 
-  def ratio(%__MODULE__{} = s1, %__MODULE__{coefficient: 1} = s2) do
-    # special case for coefficient 1 to not end up with a float if we can avoid it
-    %__MODULE__{
-      magnitude: s1.magnitude - s2.magnitude,
-      coefficient: s1.coefficient
-    }
-  end
+  defdelegate ratio(d1, d2), to: Measurements.Multiplicative.Group, as: :ratio
+  # def product(%__MODULE__{} = s1, %__MODULE__{} = s2) do
+  #   %__MODULE__{
+  #     magnitude: s1.magnitude + s2.magnitude,
+  #     coefficient: s1.coefficient * s2.coefficient
+  #   }
+  # end
 
-  def ratio(%__MODULE__{} = s1, %__MODULE__{} = s2) do
-    %__MODULE__{
-      magnitude: s1.magnitude - s2.magnitude,
-      coefficient: s1.coefficient / s2.coefficient
-    }
-  end
+  # def ratio(%__MODULE__{} = s1, %__MODULE__{coefficient: 1} = s2) do
+  #   # special case for coefficient 1 to not end up with a float if we can avoid it
+  #   %__MODULE__{
+  #     magnitude: s1.magnitude - s2.magnitude,
+  #     coefficient: s1.coefficient
+  #   }
+  # end
+
+  # def ratio(%__MODULE__{} = s1, %__MODULE__{} = s2) do
+  #   %__MODULE__{
+  #     magnitude: s1.magnitude - s2.magnitude,
+  #     coefficient: s1.coefficient / s2.coefficient
+  #   }
+  # end
 
   def convert(%__MODULE__{} = scale) do
     fn v -> v * to_value(scale) end
