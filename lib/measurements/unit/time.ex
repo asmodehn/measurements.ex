@@ -178,6 +178,10 @@ defmodule Measurements.Unit.Time do
       millisecond() -> "ms"
       microsecond() -> "μs"
       nanosecond() -> "ns"
+      hertz() -> "Hz"
+      kilohertz() -> "kHz"
+      megahertz() -> "MHz"
+      gigahertz() -> "GHz"
     end
   end
 

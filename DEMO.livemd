@@ -2,6 +2,8 @@
 
 ```elixir
 Mix.install([
+  {:type_class, "~> 1.2"},
+  {:witchcraft, "~> 1.0"},
   {:measurements, path: "."},
   {:vega_lite, "~> 0.1.6"},
   {:kino_vega_lite, "~> 0.1.7"}
@@ -49,7 +51,7 @@ A measurement can be converted to another unit of the same dimension
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-Measurements.time(300, :second, 5) |> Measurements.Value.best_convert(:microsecond)
+Measurements.time(300, :second, 5) |> Measurements.Value.convert(:microsecond)
 ```
 
 The best unit is chosen to avoid loosing precision. If the target unit is not better than the current one, the conversion is simply ignored.
@@ -57,10 +59,10 @@ The best unit is chosen to avoid loosing precision. If the target unit is not be
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-Measurements.time(300, :millisecond, 5) |> Measurements.Value.best_convert(:second)
+Measurements.time(300, :millisecond, 5) |> Measurements.Value.convert(:second)
 ```
 
-This allows to operate on measurements without knowing their precision, but remaining confident no precision in lost in various computations.
+A `:force` option is available, should anyone wish to force conversion at some point in their computation. But such a default allows to operate on measurements without knowing their precision, while remaining confident no precision in lost in various computations.
 
 ## Arithmetic
 

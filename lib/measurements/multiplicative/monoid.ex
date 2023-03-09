@@ -40,9 +40,12 @@ defclass Measurements.Multiplicative.Monoid do
       a = generate(data)
 
       if is_function(a) do
-        Semigroup.product(a, Measurements.Multiplicative.Monoid.init(a)).("foo") == a.("foo")
+        equal?(
+          Semigroup.product(a, Measurements.Multiplicative.Monoid.init(a)).("foo"),
+          a.("foo")
+        )
       else
-        Semigroup.product(a, Measurements.Multiplicative.Monoid.init(a)) == a
+        equal?(Semigroup.product(a, Measurements.Multiplicative.Monoid.init(a)), a)
       end
     end
   end

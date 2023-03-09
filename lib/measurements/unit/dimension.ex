@@ -59,20 +59,43 @@ defmodule Measurements.Unit.Dimension do
   defdelegate ratio(d1, d2), to: Measurements.Multiplicative.Group, as: :ratio
 end
 
+defimpl String.Chars, for: Measurements.Unit.Dimension do
+  def to_string(%Measurements.Unit.Dimension{
+        time: t,
+        length: l,
+        mass: m,
+        current: i,
+        temperature: th,
+        substance: n,
+        lintensity: j
+      }) do
+    repr = ""
+    repr <> if t != 0, do: "T**#{t} ", else: ""
+    repr <> if l != 0, do: "L**#{l} ", else: ""
+    repr <> if m != 0, do: "M**#{m} ", else: ""
+    repr <> if i != 0, do: "I**#{i} ", else: ""
+    repr <> if th != 0, do: "θ**#{th}", else: ""
+    repr <> if n != 0, do: "N**#{n}", else: ""
+    repr <> if j != 0, do: "J**#{j}", else: ""
+  end
+end
+
+defimpl TypeClass.Property.Generator, for: Measurements.Unit.Dimension do
+  def generate(_),
+    do:
+      Measurements.Unit.Dimension.new()
+      |> Measurements.Unit.Dimension.with_time(Enum.random(-3..3))
+      |> Measurements.Unit.Dimension.with_length(Enum.random(-3..3))
+      |> Measurements.Unit.Dimension.with_mass(Enum.random(-3..3))
+      |> Measurements.Unit.Dimension.with_current(Enum.random(-3..3))
+      |> Measurements.Unit.Dimension.with_temperature(Enum.random(-3..3))
+      |> Measurements.Unit.Dimension.with_substance(Enum.random(-3..3))
+      |> Measurements.Unit.Dimension.with_lintensity(Enum.random(-3..3))
+end
+
 import TypeClass
 
 definst Measurements.Multiplicative.Semigroup, for: Measurements.Unit.Dimension do
-  custom_generator(_) do
-    Measurements.Unit.Dimension.new()
-    |> Measurements.Unit.Dimension.with_time(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_length(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_mass(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_current(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_temperature(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_substance(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_lintensity(Enum.random(-3..3))
-  end
-
   def product(%Measurements.Unit.Dimension{} = d1, %Measurements.Unit.Dimension{} = d2) do
     %Measurements.Unit.Dimension{
       time: d1.time + d2.time,
@@ -87,42 +110,21 @@ definst Measurements.Multiplicative.Semigroup, for: Measurements.Unit.Dimension 
 end
 
 definst Measurements.Multiplicative.Monoid, for: Measurements.Unit.Dimension do
-  custom_generator(_) do
-    Measurements.Unit.Dimension.new()
-    |> Measurements.Unit.Dimension.with_time(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_length(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_mass(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_current(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_temperature(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_substance(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_lintensity(Enum.random(-3..3))
-  end
-
   def init(_d) do
     %Measurements.Unit.Dimension{}
   end
 end
 
-definst Measurements.Multiplicative.Group, for: Measurements.Unit.Dimension do
-  custom_generator(_) do
-    Measurements.Unit.Dimension.new()
-    |> Measurements.Unit.Dimension.with_time(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_length(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_mass(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_current(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_temperature(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_substance(Enum.random(-3..3))
-    |> Measurements.Unit.Dimension.with_lintensity(Enum.random(-3..3))
-  end
+# definst Measurements.Multiplicative.Group, for: Measurements.Unit.Dimension do
 
-  def inverse(%Measurements.Unit.Dimension{} = d) do
-    d
-    |> Map.update!(:time, &(-&1))
-    |> Map.update!(:length, &(-&1))
-    |> Map.update!(:mass, &(-&1))
-    |> Map.update!(:current, &(-&1))
-    |> Map.update!(:temperature, &(-&1))
-    |> Map.update!(:substance, &(-&1))
-    |> Map.update!(:lintensity, &(-&1))
-  end
-end
+#   def inverse(%Measurements.Unit.Dimension{} = d) do
+#     d
+#     |> Map.update!(:time, &(-&1))
+#     |> Map.update!(:length, &(-&1))
+#     |> Map.update!(:mass, &(-&1))
+#     |> Map.update!(:current, &(-&1))
+#     |> Map.update!(:temperature, &(-&1))
+#     |> Map.update!(:substance, &(-&1))
+#     |> Map.update!(:lintensity, &(-&1))
+#   end
+# end

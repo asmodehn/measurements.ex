@@ -4,7 +4,6 @@ defmodule Measurements.Error do
   """
   alias Measurements.Unit
 
-  @enforce_keys [:error, :unit]
   defstruct error: 0,
             unit: nil
 
@@ -111,22 +110,23 @@ defmodule Measurements.Error do
       }
 
   """
-  def sum(%__MODULE__{} = e1, %__MODULE__{} = e2)
-      when e1.unit == e2.unit do
-    new(e1.error + e2.error, e1.unit)
-  end
+  defdelegate sum(e1, e2), to: Witchcraft.Semigroup, as: :append
+  # def sum(%__MODULE__{} = e1, %__MODULE__{} = e2)
+  #     when e1.unit == e2.unit do
+  #   new(e1.error + e2.error, e1.unit)
+  # end
 
-  def sum(%__MODULE__{} = e1, %__MODULE__{} = e2) do
-    cond do
-      Unit.dimension(e1.unit) == Unit.dimension(e2.unit) ->
-        e1 = convert(e1, e2.unit)
-        e2 = convert(e2, e1.unit)
-        sum(e1, e2)
+  # def sum(%__MODULE__{} = e1, %__MODULE__{} = e2) do
+  #   cond do
+  #     Unit.dimension(e1.unit) == Unit.dimension(e2.unit) ->
+  #       e1 = convert(e1, e2.unit)
+  #       e2 = convert(e2, e1.unit)
+  #       sum(e1, e2)
 
-      true ->
-        raise ArgumentError, message: "#{e1} and #{e2} have incompatible unit dimension"
-    end
-  end
+  #     true ->
+  #       raise ArgumentError, message: "#{e1} and #{e2} have incompatible unit dimension"
+  #   end
+  # end
 
   @doc """
   Scales a measurement by a number.
@@ -145,7 +145,8 @@ defmodule Measurements.Error do
 
   """
   def scale(%__MODULE__{} = e, n) when is_integer(n) do
-    new(abs(e.error * n), e.unit)
+    Witchcraft.Semigroup.repeat(e, times: n)
+    # new(abs(e.error * n), e.unit)
   end
 end
 
@@ -158,4 +159,58 @@ defimpl String.Chars, for: Measurements.Error do
 
     "±#{e} #{u}"
   end
+end
+
+import TypeClass
+
+defimpl TypeClass.Property.Generator, for: Measurements.Error do
+  require Measurements.Unit.Time
+  require Measurements.Unit.Length
+
+  def generate(_),
+    do:
+      Measurements.Error.new(
+        :rand.uniform(1000),
+        Enum.random(Measurements.Unit.Time.__units() ++ Measurements.Unit.Length.__units())
+      )
+end
+
+definst Witchcraft.Semigroup, for: Measurements.Error do
+  require Measurements.Unit.Time
+  require Measurements.Unit.Length
+
+  custom_generator(_) do
+    Measurements.Error.new(
+      :rand.uniform(1000),
+      # Enum.random(Measurements.Unit.Time.__units() ++ Measurements.Unit.Length.__units())
+      # Enum.random(Measurements.Unit.Time.__units() ) # not working because Hz and second in same module...
+      Enum.random(Measurements.Unit.Length.__units())
+      # TODO : handle unit algebra ? how ??
+    )
+  end
+
+  def append(%Measurements.Error{} = e1, %Measurements.Error{} = e2)
+      when e1.unit == e2.unit do
+    %Measurements.Error{
+      error: e1.error + e2.error,
+      unit: e1.unit
+    }
+  end
+
+  def append(%Measurements.Error{} = e1, %Measurements.Error{} = e2) do
+    cond do
+      Measurements.Unit.dimension(e1.unit) == Measurements.Unit.dimension(e2.unit) ->
+        e1 = Measurements.Error.convert(e1, e2.unit)
+        e2 = Measurements.Error.convert(e2, e1.unit)
+        append(e1, e2)
+
+      true ->
+        raise ArgumentError, message: "#{e1} and #{e2} have incompatible unit dimension"
+    end
+  end
+end
+
+definst Witchcraft.Monoid, for: Measurements.Error do
+  # Monoid on the same unit !!
+  def empty(e), do: %Measurements.Error{unit: e.unit}
 end
