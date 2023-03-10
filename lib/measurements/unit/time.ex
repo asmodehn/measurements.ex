@@ -17,6 +17,7 @@ defmodule Measurements.Unit.Time do
   defmacro microsecond, do: quote(do: :microsecond)
   defmacro nanosecond, do: quote(do: :nanosecond)
 
+  defmacro attohertz, do: quote(do: :attohertz)
   defmacro hertz, do: quote(do: :hertz)
   defmacro kilohertz, do: quote(do: :kilohertz)
   defmacro megahertz, do: quote(do: :megahertz)
@@ -59,16 +60,15 @@ defmodule Measurements.Unit.Time do
 
   # no special dimension if no unit. useful to break loop cleanly when alias not found.
   def dimension(nil), do: Dimension.new()
-  def dimension(second()), do: Dimension.new() |> Dimension.with_time(1)
-  def dimension(millisecond()), do: Dimension.new() |> Dimension.with_time(1)
-  def dimension(microsecond()), do: Dimension.new() |> Dimension.with_time(1)
-  def dimension(nanosecond()), do: Dimension.new() |> Dimension.with_time(1)
+
+  def dimension(unit) when unit in [second(), millisecond(), microsecond(), nanosecond()],
+    do: Dimension.new() |> Dimension.with_time(1)
+
   def dimension(ps) when is_integer(ps) and ps > 0, do: Dimension.new() |> Dimension.with_time(1)
 
-  def dimension(hertz()), do: Dimension.new() |> Dimension.with_time(-1)
-  def dimension(kilohertz()), do: Dimension.new() |> Dimension.with_time(-1)
-  def dimension(megahertz()), do: Dimension.new() |> Dimension.with_time(-1)
-  def dimension(gigahertz()), do: Dimension.new() |> Dimension.with_time(-1)
+  def dimension(unit) when unit in [hertz(), kilohertz(), megahertz(), gigahertz()],
+    do: Dimension.new() |> Dimension.with_time(-1)
+
   def dimension(unit) when is_atom(unit), do: dimension(__alias(unit))
 
   def dimension(other), do: raise(ArgumentError, message: argument_error_message(other))
@@ -77,10 +77,14 @@ defmodule Measurements.Unit.Time do
   @impl Scalable
   # no special scale if no unit. useful to break loop when alias not found.
   def scale(nil), do: Scale.new(0)
-  def scale(second()), do: Scale.new(0)
-  def scale(millisecond()), do: Scale.new(-3)
-  def scale(microsecond()), do: Scale.new(-6)
-  def scale(nanosecond()), do: Scale.new(-9)
+  def scale(unit) when is_atom(unit) and unit not in __units(), do: scale(__alias(unit))
+
+  def scale(unit) when is_atom(unit) do
+    cond do
+      String.ends_with?(Atom.to_string(unit), "second") -> Scale.from_unit(unit)
+      String.ends_with?(Atom.to_string(unit), "hertz") -> Scale.from_unit(unit)
+    end
+  end
 
   def scale(ps) when is_integer(ps) and ps > 0 do
     direct = Scale.from_value(ps)
@@ -88,86 +92,36 @@ defmodule Measurements.Unit.Time do
     %{direct | magnitude: -direct.magnitude}
   end
 
-  def scale(hertz()), do: Scale.new(0)
-  def scale(kilohertz()), do: Scale.new(3)
-  def scale(megahertz()), do: Scale.new(6)
-  def scale(gigahertz()), do: Scale.new(9)
-  def scale(unit) when is_atom(unit), do: scale(__alias(unit))
-
   def scale(other), do: raise(ArgumentError, message: argument_error_message(other))
 
   @behaviour Unitable
   @impl Unitable
   @spec unit(Scale.t(), Dimension.t()) :: {:ok, atom} | {:error, fun, atom}
   def unit(%Scale{coefficient: 1} = s, %Dimension{
-        time: 1,
+        time: t,
         length: 0,
         mass: 0,
         current: 0,
         temperature: 0,
         substance: 0,
         lintensity: 0
-      }) do
-    cond do
-      s.magnitude == -9 ->
-        {:ok, nanosecond()}
-
-      s.magnitude < -6 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude + 9}), nanosecond()}
-
-      s.magnitude == -6 ->
-        {:ok, microsecond()}
-
-      s.magnitude < -3 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude + 6}), microsecond()}
-
-      s.magnitude == -3 ->
-        {:ok, millisecond()}
-
-      s.magnitude < 0 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude + 3}), millisecond()}
-
-      s.magnitude == 0 ->
-        {:ok, second()}
-
-      true ->
-        {:error, Scale.convert(s), second()}
-    end
-  end
-
-  def unit(%Scale{coefficient: 1} = s, %Dimension{
-        time: -1,
-        length: 0,
-        mass: 0,
-        current: 0,
-        temperature: 0,
-        substance: 0,
-        lintensity: 0
-      }) do
-    cond do
-      s.magnitude > 9 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude - 9}), gigahertz()}
-
-      s.magnitude == 9 ->
-        {:ok, gigahertz()}
-
-      s.magnitude > 6 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude - 6}), megahertz()}
-
-      s.magnitude == 6 ->
-        {:ok, megahertz()}
-
-      s.magnitude > 3 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude - 3}), kilohertz()}
-
-      s.magnitude == 3 ->
-        {:ok, kilohertz()}
-
-      s.magnitude == 0 ->
-        {:ok, hertz()}
-
-      true ->
-        {:error, Scale.convert(s), hertz()}
+      })
+      when t > 0 do
+    with {:dimension, {:ok, unit}} <- {:dimension, {:ok, "second"}},
+         # |> IO.inspect()
+         {:scale, {:ok, prefixed_unit}} <- {:scale, with_scale(unit, s, t)} do
+      if t == 1 do
+        {:ok, prefixed_unit}
+      else
+        {:ok, String.to_atom(Atom.to_string(prefixed_unit) <> "_#{t}")}
+      end
+    else
+      {:scale, {:error, convert, prefixed_unit}} ->
+        if t == 1 do
+          {:error, convert, prefixed_unit}
+        else
+          {:error, convert, String.to_atom(Atom.to_string(prefixed_unit) <> "_#{t}")}
+        end
     end
   end
 
@@ -179,34 +133,62 @@ defmodule Measurements.Unit.Time do
         temperature: 0,
         substance: 0,
         lintensity: 0
-      }) do
-    cond do
-      s.magnitude == -9 * t ->
-        {:ok, String.to_atom(Atom.to_string(nanosecond()) <> "_#{t}")}
+      })
+      when t < 0 do
+    with {:dimension, {:ok, unit}} <- {:dimension, {:ok, "hertz"}},
+         # CAREFUL : we need to pass -t as we are using :hertz as a unit and not :per_second"
+         # |> IO.inspect()
+         {:scale, {:ok, prefixed_unit}} <- {:scale, with_scale(unit, s, -t)} do
+      if t == -1 do
+        {:ok, prefixed_unit}
+      else
+        {:ok, String.to_atom(Atom.to_string(prefixed_unit) <> "_#{t}")}
+      end
+    else
+      {:scale, {:error, convert, prefixed_unit}} ->
+        if t == -1 do
+          {:error, convert, prefixed_unit}
+        else
+          {:error, convert, String.to_atom(Atom.to_string(prefixed_unit) <> "_#{t}")}
+        end
+    end
+  end
 
-      s.magnitude < -6 * t ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude + 9 * t}),
-         String.to_atom(Atom.to_string(nanosecond()) <> "_#{t}")}
+  @spec with_scale(String.t(), Scale.t(), integer, integer) ::
+          {:ok, atom} | {:error, (term -> term), atom}
+  def with_scale(unit, %Scale{magnitude: m} = s, unit_power \\ 1, convert_mag_acc \\ 0) do
+    try do
+      case Scale.prefix(s, unit_power) do
+        {:ok, prefix} ->
+          if convert_mag_acc == 0 do
+            # |> IO.inspect()
+            {:ok, String.to_existing_atom(prefix <> unit)}
+          else
+            # |> IO.inspect()
+            {:error, Scale.convert(Scale.new(convert_mag_acc)),
+             String.to_existing_atom(prefix <> unit)}
+          end
 
-      s.magnitude == -6 * t ->
-        {:ok, String.to_atom(Atom.to_string(microsecond()) <> "_#{t}")}
-
-      s.magnitude < -3 * t ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude + 6 * t}),
-         String.to_atom(Atom.to_string(microsecond()) <> "_#{t}")}
-
-      s.magnitude == -3 * t ->
-        {:ok, String.to_atom(Atom.to_string(millisecond()) <> "_#{t}")}
-
-      s.magnitude < 0 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude + 3 * t}),
-         String.to_atom(Atom.to_string(millisecond()) <> "_#{t}")}
-
-      s.magnitude == 0 ->
-        {:ok, String.to_atom(Atom.to_string(second()) <> "_#{t}")}
-
-      true ->
-        {:error, Scale.convert(s), String.to_atom(Atom.to_string(second()) <> "_#{t}")}
+        {:error, convert, prefix} ->
+          # composing with already existing convert function
+          if convert_mag_acc == 0 do
+            # |> IO.inspect()
+            {:error, convert, String.to_existing_atom(prefix <> unit)}
+          else
+            # |> IO.inspect()
+            {:error, fn v -> Scale.convert(Scale.new(convert_mag_acc)).(convert.(v)) end,
+             String.to_existing_atom(prefix <> unit)}
+          end
+      end
+    rescue
+      # IO.inspect(ae)
+      ae in ArgumentError ->
+        # converge towards 0 
+        cond do
+          m > 0 -> with_scale(unit, %{s | magnitude: m - 3}, unit_power, convert_mag_acc + 3)
+          m < 0 -> with_scale(unit, %{s | magnitude: m + 3}, unit_power, convert_mag_acc - 3)
+          true -> reraise ae, __STACKTRACE__
+        end
     end
   end
 

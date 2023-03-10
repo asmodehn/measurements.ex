@@ -244,19 +244,22 @@ defmodule Measurements.Unit do
   end
 
   @doc """
-  Sinc unit is an atom, protocol cannot dispatch on it.
+  Since unit is an atom, protocol cannot dispatch on it.
   However we can rely on scale and dimension of the unit
   """
-  @spec product(t, t) :: t
+  @spec product(t, t) :: {:ok, (value -> value)} | {:error, String.t()}
   def product(u1, u2) do
     with {^u1, {:ok, s1}, {:ok, d1}} <-
            {u1, Measurements.Unit.scale(u1), Measurements.Unit.dimension(u1)},
          {^u2, {:ok, s2}, {:ok, d2}} <-
            {u2, Measurements.Unit.scale(u2), Measurements.Unit.dimension(u2)} do
-      Measurements.Unit.new(
-        Measurements.Unit.Scale.prod(s1, s2),
-        Measurements.Unit.Dimension.product(d1, d2)
-      )
+      # |> IO.inspect()
+      prod_dim = Measurements.Unit.Dimension.product(d1, d2)
+      # |> IO.inspect()
+      prod_scale = Measurements.Unit.Scale.prod(s1, s2)
+      # TODO :how to show that the power of the dimension will influence the value ????
+
+      Measurements.Unit.new(prod_scale, prod_dim)
     else
       {unit, {:error, reason}, {:ok, d}} ->
         raise ArgumentError,

@@ -83,41 +83,44 @@ defmodule Measurements.Unit.Length do
         substance: 0,
         lintensity: 0
       }) do
-    cond do
-      s.magnitude == -9 ->
-        {:ok, nanometer()}
+    with {:dimension, {:ok, unit}} <- {:dimension, {:ok, "meter"}},
+         {:scale, {:ok, prefixed_unit}} <- {:scale, with_scale(unit, s)} do
+      {:ok, prefixed_unit}
+    else
+      {:scale, {:error, convert, prefixed_unit}} ->
+        {:error, convert, prefixed_unit}
+    end
+  end
 
-      s.magnitude < -6 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude + 9}), nanometer()}
+  @spec with_scale(String.t(), Scale.t(), integer) :: {:ok, atom} | {:error, (term -> term), atom}
+  def with_scale(unit, %Scale{magnitude: m} = s, convert_mag_acc \\ 0) do
+    try do
+      case Scale.prefix(s) do
+        {:ok, prefix} ->
+          if convert_mag_acc == 0 do
+            {:ok, String.to_existing_atom(prefix <> unit)}
+          else
+            {:error, Scale.convert(Scale.new(convert_mag_acc)),
+             String.to_existing_atom(prefix <> unit)}
+          end
 
-      s.magnitude == -6 ->
-        {:ok, micrometer()}
-
-      s.magnitude < -3 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude + 6}), micrometer()}
-
-      s.magnitude == -3 ->
-        {:ok, millimeter()}
-
-      s.magnitude < 0 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude + 3}), millimeter()}
-
-      # invert check order, as we inverse scale search
-
-      s.magnitude > 3 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude - 3}), kilometer()}
-
-      s.magnitude == 3 ->
-        {:ok, kilometer()}
-
-      s.magnitude > 0 ->
-        {:error, Scale.convert(%{s | magnitude: s.magnitude}), meter()}
-
-      s.magnitude == 0 ->
-        {:ok, meter()}
-
-      true ->
-        {:error, Scale.convert(s), meter()}
+        {:error, convert, prefix} ->
+          # composing with already existing convert function
+          if convert_mag_acc == 0 do
+            {:error, convert, String.to_existing_atom(prefix <> unit)}
+          else
+            {:error, fn v -> Scale.convert(Scale.new(convert_mag_acc)).(convert.(v)) end,
+             String.to_existing_atom(prefix <> unit)}
+          end
+      end
+    rescue
+      ae in ArgumentError ->
+        # converge towards 0 
+        cond do
+          m > 0 -> with_scale(unit, %{s | magnitude: m - 3}, convert_mag_acc + 3)
+          m < 0 -> with_scale(unit, %{s | magnitude: m + 3}, convert_mag_acc - 3)
+          true -> reraise ae, __STACKTRACE__
+        end
     end
   end
 

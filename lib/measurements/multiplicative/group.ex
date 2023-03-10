@@ -78,7 +78,7 @@ defclass Measurements.Multiplicative.Group do
         # |> IO.inspect()
 
         true ->
-          IO.inspect("DEFAULT CASE")
+          # IO.inspect("DEFAULT CASE")
           raise RuntimeError, message: "NOT IMPLEMENTED for #{maybe_init}"
       end
     end
@@ -105,7 +105,7 @@ defclass Measurements.Multiplicative.Group do
         # |> IO.inspect()
 
         true ->
-          IO.inspect("DEFAULT CASE")
+          # IO.inspect("DEFAULT CASE")
           raise RuntimeError, message: "NOT IMPLEMENTED for #{maybe_init}"
       end
     end

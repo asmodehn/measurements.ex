@@ -109,6 +109,7 @@ defmodule Measurements.Unit.TimeTest do
       assert convert.(42) == 4200
     end
 
+    @tag :hertz
     test "supports Scale and Dimension as arguments to get hertz" do
       {:ok, :hertz} = Time.unit(Scale.new(), %Dimension{time: -1})
       {:ok, :kilohertz} = Time.unit(Scale.new(3), %Dimension{time: -1})
@@ -121,7 +122,9 @@ defmodule Measurements.Unit.TimeTest do
 
       {:error, convert, unit} = Time.unit(Scale.new(-7), %Dimension{time: -1})
       assert unit == :hertz
-      assert convert.(42) == 0.0000042
+      # Note : round is needed because scale conversion produce imprecise float...
+      # TODO : how to fix that ??
+      assert Float.round(convert.(42), 7) == 0.0000042
     end
   end
 

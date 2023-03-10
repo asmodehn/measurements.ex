@@ -24,27 +24,6 @@ defmodule Measurements.Unit.Scale do
   defdelegate prod(d1, d2), to: Measurements.Multiplicative.Semigroup, as: :product
 
   defdelegate ratio(d1, d2), to: Measurements.Multiplicative.Group, as: :ratio
-  # def product(%__MODULE__{} = s1, %__MODULE__{} = s2) do
-  #   %__MODULE__{
-  #     magnitude: s1.magnitude + s2.magnitude,
-  #     coefficient: s1.coefficient * s2.coefficient
-  #   }
-  # end
-
-  # def ratio(%__MODULE__{} = s1, %__MODULE__{coefficient: 1} = s2) do
-  #   # special case for coefficient 1 to not end up with a float if we can avoid it
-  #   %__MODULE__{
-  #     magnitude: s1.magnitude - s2.magnitude,
-  #     coefficient: s1.coefficient
-  #   }
-  # end
-
-  # def ratio(%__MODULE__{} = s1, %__MODULE__{} = s2) do
-  #   %__MODULE__{
-  #     magnitude: s1.magnitude - s2.magnitude,
-  #     coefficient: s1.coefficient / s2.coefficient
-  #   }
-  # end
 
   def convert(%__MODULE__{} = scale) do
     fn v -> v * to_value(scale) end
@@ -74,6 +53,60 @@ defmodule Measurements.Unit.Scale do
   @spec to_value(t) :: integer
   def to_value(%__MODULE__{} = scale) do
     scale.coefficient * 10 ** scale.magnitude
+  end
+
+  @spec prefix(t) :: {:ok, String.t()} | {:error, (term -> term), String.t()}
+  def prefix(%__MODULE__{magnitude: m} = s, unit_power \\ 1) do
+    # s |> IO.inspect()
+    cond do
+      m == -18 * unit_power -> {:ok, "atto"}
+      m < -15 * unit_power -> {:error, convert(%{s | magnitude: m + 18 * unit_power}), "atto"}
+      m == -15 * unit_power -> {:ok, "femto"}
+      m < -12 * unit_power -> {:error, convert(%{s | magnitude: m + 15 * unit_power}), "femto"}
+      m == -12 * unit_power -> {:ok, "pico"}
+      m < -9 * unit_power -> {:error, convert(%{s | magnitude: m + 12 * unit_power}), "pico"}
+      m == -9 * unit_power -> {:ok, "nano"}
+      m < -6 * unit_power -> {:error, convert(%{s | magnitude: m + 9 * unit_power}), "nano"}
+      m == -6 * unit_power -> {:ok, "micro"}
+      m < -3 * unit_power -> {:error, convert(%{s | magnitude: m + 6 * unit_power}), "micro"}
+      m == -3 * unit_power -> {:ok, "milli"}
+      m < 0 * unit_power -> {:error, convert(%{s | magnitude: m + 3 * unit_power}), "milli"}
+      m == 0 * unit_power -> {:ok, ""}
+      m < 3 * unit_power -> {:error, convert(s), ""}
+      m == 3 * unit_power -> {:ok, "kilo"}
+      m < 6 * unit_power -> {:error, convert(%{s | magnitude: m - 3 * unit_power}), "kilo"}
+      m == 6 * unit_power -> {:ok, "mega"}
+      m < 9 * unit_power -> {:error, convert(%{s | magnitude: m - 6 * unit_power}), "mega"}
+      m == 9 * unit_power -> {:ok, "giga"}
+      m < 12 * unit_power -> {:error, convert(%{s | magnitude: m - 9 * unit_power}), "giga"}
+      m == 12 * unit_power -> {:ok, "tera"}
+      m < 15 * unit_power -> {:error, convert(%{s | magnitude: m - 12 * unit_power}), "tera"}
+      m == 15 * unit_power -> {:ok, "peta"}
+      m < 18 * unit_power -> {:error, convert(%{s | magnitude: m - 15 * unit_power}), "peta"}
+      m == 18 * unit_power -> {:ok, :exa}
+      m > 18 * unit_power -> {:error, convert(%{s | magnitude: m - 18 * unit_power}), "exa"}
+    end
+  end
+
+  def from_unit(unit) when is_atom(unit) do
+    strunit = Atom.to_string(unit)
+
+    cond do
+      String.starts_with?(strunit, "atto") -> new(-18)
+      String.starts_with?(strunit, "femto") -> new(-15)
+      String.starts_with?(strunit, "pico") -> new(-12)
+      String.starts_with?(strunit, "nano") -> new(-9)
+      String.starts_with?(strunit, "micro") -> new(-6)
+      String.starts_with?(strunit, "milli") -> new(-3)
+      String.starts_with?(strunit, "kilo") -> new(3)
+      String.starts_with?(strunit, "mega") -> new(6)
+      String.starts_with?(strunit, "giga") -> new(9)
+      String.starts_with?(strunit, "tera") -> new(12)
+      String.starts_with?(strunit, "peta") -> new(15)
+      String.starts_with?(strunit, "exa") -> new(18)
+      # default if prefix not recognized
+      true -> new(0)
+    end
   end
 end
 
