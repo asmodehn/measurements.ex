@@ -1,0 +1,93 @@
+defmodule Measurements.Unit.Parser.TMPAPI do
+  # Internal API
+  def scale(prefix) do
+    case prefix do
+      "atto" -> -18
+      "femto" -> -15
+      "pico" -> -12
+      "nano" -> -9
+      "micro" -> -6
+      "milli" -> -3
+      "" -> 0
+      "kilo" -> 3
+      "mega" -> 6
+      "giga" -> 9
+      "tera" -> 12
+      "peta" -> 15
+      "exa" -> 18
+    end
+  end
+
+  def unit(str) do
+    case str do
+      "second" -> Time
+      "hertz" -> Time
+      "meter" -> Length
+    end
+  end
+
+  def exponent(exp) do
+    exp
+  end
+end
+
+defmodule Measurements.Unit.Parser do
+  @moduledoc """
+  This is a Parser for unit atoms, once converted to string for unit computation.
+
+  This is the reference in the code about what unit is accepted and how it is represented internally.
+
+  Indeed, the accepted syntax, and its semantics via mapped functions, is clearly explicited in this module.
+
+  Therefore we must eventually verify via tests that:
+  - any generatable unit is parsable (easy), 
+  - every parseable unit is generateable (harder) 
+
+  """
+  import NimbleParsec
+
+  alias Measurements.Unit.Parser.TMPAPI
+
+  scale_prefix =
+    optional(
+      choice([
+        string("atto"),
+        string("femto"),
+        string("pico"),
+        string("nano"),
+        string("micro"),
+        string("milli"),
+        string("kilo"),
+        string("mega"),
+        string("giga"),
+        string("tera"),
+        string("peta"),
+        string("exa"),
+        string("")
+      ])
+    )
+    |> map({TMPAPI, :scale, []})
+
+  core_unit =
+    choice([string("second"), string("hertz"), string("meter")]) |> map({TMPAPI, :unit, []})
+
+  exponent =
+    choice([
+      ignore(string("_")) |> choice([string("-"), optional(string("+"))]) |> integer(1),
+      string("") |> replace(0)
+    ])
+    |> map({TMPAPI, :exponent, []})
+
+  defparsec(:unit, scale_prefix |> concat(core_unit) |> concat(exponent))
+
+  defparsec(
+    :derived_unit,
+    repeat(
+      scale_prefix
+      |> concat(core_unit)
+      |> concat(exponent)
+      |> ignore(optional(string("_")))
+    ),
+    debug: true
+  )
+end
