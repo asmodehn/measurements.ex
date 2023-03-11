@@ -26,8 +26,12 @@ defmodule Measurements.Unit.Parser.TMPAPI do
     end
   end
 
-  def exponent(exp) do
-    exp
+  def exponent(exp_str) when is_list(exp_str) do
+    # from charlist to string
+    str = List.to_string(exp_str)
+    # parse to integer
+    {i, ""} = Integer.parse(str)
+    i
   end
 end
 
@@ -67,27 +71,38 @@ defmodule Measurements.Unit.Parser do
       ])
     )
     |> map({TMPAPI, :scale, []})
+    |> label(
+      "scale prefix, among these: atto, femto, pico, nano, micro, milli, kilo, mega, giga, tera, peta, exa, or just nothing"
+    )
 
   core_unit =
-    choice([string("second"), string("hertz"), string("meter")]) |> map({TMPAPI, :unit, []})
+    choice([string("second"), string("hertz"), string("meter")])
+    |> map({TMPAPI, :unit, []})
+    |> label("core unit among these: second, hertz, meter")
+
+  maybe_neg_integer =
+    choice([
+      ascii_char([?-]),
+      optional(ascii_char([?+]))
+    ])
+    |> ascii_char([?0..?9])
+    |> reduce({TMPAPI, :exponent, []})
 
   exponent =
     choice([
-      ignore(string("_")) |> choice([string("-"), optional(string("+"))]) |> integer(1),
-      string("") |> replace(0)
+      ignore(string("_")) |> concat(maybe_neg_integer),
+      # default to dimension one (integer), since unit is present !
+      string("") |> replace(1)
     ])
-    |> map({TMPAPI, :exponent, []})
-
-  defparsec(:unit, scale_prefix |> concat(core_unit) |> concat(exponent))
+    |> label("exponent integer, positive or negative, separated by a leading '_' ")
 
   defparsec(
-    :derived_unit,
+    :unit,
     repeat(
       scale_prefix
       |> concat(core_unit)
       |> concat(exponent)
       |> ignore(optional(string("_")))
-    ),
-    debug: true
+    )
   )
 end
