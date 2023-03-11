@@ -58,6 +58,9 @@ defmodule Measurements.Unit.Length do
 
   def dimension(other), do: raise(ArgumentError, message: argument_error_message(other))
 
+  ###### NEW API
+  def with_dimension(exp) when is_integer(exp), do: Dimension.new() |> Dimension.with_length(exp)
+
   @behaviour Scalable
   @impl Scalable
   # no special dimension if no unit. useful to break loop cleanly when alias not found.

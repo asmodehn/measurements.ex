@@ -73,6 +73,9 @@ defmodule Measurements.Unit.Time do
 
   def dimension(other), do: raise(ArgumentError, message: argument_error_message(other))
 
+  ###### NEW API
+  def with_dimension(exp) when is_integer(exp), do: Dimension.new() |> Dimension.with_time(exp)
+
   @behaviour Scalable
   @impl Scalable
   # no special scale if no unit. useful to break loop when alias not found.

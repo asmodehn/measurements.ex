@@ -1,5 +1,9 @@
 defmodule Measurements.Unit.Parser.TMPAPI do
   # Internal API
+
+  alias Measurements.Unit.Time
+  alias Measurements.Unit.Length
+
   def scale(prefix) do
     case prefix do
       "atto" -> -18
@@ -19,10 +23,13 @@ defmodule Measurements.Unit.Parser.TMPAPI do
   end
 
   def unit(str) do
-    case str do
-      "second" -> Time
-      "hertz" -> Time
-      "meter" -> Length
+    case str |> Enum.join("") do
+      "per_second" -> {Time, -1}
+      "second" -> {Time, 1}
+      "hertz" -> {Time, -1}
+      "per_hertz" -> {Time, 1}
+      "meter" -> {Length, 1}
+      "per_meter" -> {Length, -1}
     end
   end
 
@@ -76,25 +83,22 @@ defmodule Measurements.Unit.Parser do
     )
 
   core_unit =
-    choice([string("second"), string("hertz"), string("meter")])
-    |> map({TMPAPI, :unit, []})
-    |> label("core unit among these: second, hertz, meter")
-
-  maybe_neg_integer =
-    choice([
-      ascii_char([?-]),
-      optional(ascii_char([?+]))
-    ])
-    |> ascii_char([?0..?9])
-    |> reduce({TMPAPI, :exponent, []})
+    optional(string("per_"))
+    |> concat(choice([string("second"), string("hertz"), string("meter")]))
+    |> reduce({TMPAPI, :unit, []})
+    |> label(
+      "optional prefix \"per_\" with a core unit among these: \"second\", \"hertz\", \"meter\""
+    )
 
   exponent =
     choice([
-      ignore(string("_")) |> concat(maybe_neg_integer),
+      ignore(string("_")) |> concat(integer(1)),
       # default to dimension one (integer), since unit is present !
       string("") |> replace(1)
     ])
-    |> label("exponent integer, positive or negative, separated by a leading '_' ")
+    |> label(
+      "exponent integer, always positive, separated by a leading '_' or nothing for implicit 1"
+    )
 
   defparsec(
     :unit,
@@ -105,4 +109,119 @@ defmodule Measurements.Unit.Parser do
       |> ignore(optional(string("_")))
     )
   )
+
+  alias Measurements.Unit.Scale
+  alias Measurements.Unit.Dimension
+
+  @spec parse(atom) :: {:ok, Scale.t(), Dimension.t()} | {:error, term}
+  def parse(unit) when is_atom(unit) do
+    {:ok, scale_dim_list, "", _, _, _} = unit(Atom.to_string(unit))
+
+    Enum.chunk_every(scale_dim_list, 3)
+    |> Enum.map(fn
+      [scale, {mod, pow}, exp] -> {Scale.new(scale * exp), mod.with_dimension(exp * pow)}
+    end)
+    |> Enum.reduce({:ok, Scale.new(), Dimension.new()}, fn
+      {s, d}, {:ok, accs, accd} -> {:ok, Scale.prod(accs, s), Dimension.product(accd, d)}
+    end)
+
+    # TODO :return error when parse is not possible
+  end
+
+  @doc """
+  A straight forward way to generate a unit atom. 
+  This might not be the one desired however, since scale can be shifted between the various unit dimensions.
+
+  Choice is a matter of preference and is left to the user, `Unit.equal?` should be used to check for unit equality and replace the atom where needed during computations.
+
+  """
+  @spec to_unit(Scale.t(), Dimension.t(), String.t()) :: {atom, Scale.t()}
+  def to_unit(scale, dim, acc \\ "")
+
+  def to_unit(
+        %Scale{magnitude: m} = s,
+        %Dimension{
+          time: 0,
+          length: 0,
+          mass: 0,
+          current: 0,
+          temperature: 0,
+          substance: 0,
+          lintensity: 0
+        },
+        acc
+      )
+      when s.coefficient == 1 do
+    # convert to readable unit when appropriate -> very special cases
+    final_acc = acc |> String.replace_prefix("per_second", "hertz")
+
+    {unit_str, rem_scale} =
+      cond do
+        m >= 18 -> {"exa" <> final_acc, %{s | magnitude: m - 18}}
+        m >= 15 -> {"peta" <> final_acc, %{s | magnitude: m - 15}}
+        m >= 12 -> {"tera" <> final_acc, %{s | magnitude: m - 12}}
+        m >= 9 -> {"giga" <> final_acc, %{s | magnitude: m - 9}}
+        m >= 6 -> {"mega" <> final_acc, %{s | magnitude: m - 6}}
+        m >= 3 -> {"kilo" <> final_acc, %{s | magnitude: m - 3}}
+        m >= 0 -> {final_acc, s}
+        m >= -3 -> {"milli" <> final_acc, %{s | magnitude: m + 3}}
+        m >= -6 -> {"micro" <> final_acc, %{s | magnitude: m + 6}}
+        m >= -9 -> {"nano" <> final_acc, %{s | magnitude: m + 9}}
+        m >= -12 -> {"pico" <> final_acc, %{s | magnitude: m + 12}}
+        m >= -15 -> {"femto" <> final_acc, %{s | magnitude: m + 15}}
+        true -> {"atto" <> final_acc, %{s | magnitude: m + 18}}
+      end
+
+    {String.to_atom(unit_str), rem_scale}
+  end
+
+  # REMEMBER to order these by priority when naming a derived unit...
+  def to_unit(%Scale{} = scale, %Dimension{length: l} = dim, acc) when l < 0,
+    do: to_unit(scale, %{dim | length: -l}, compose_acc_next(acc, "per"))
+
+  def to_unit(%Scale{} = scale, %Dimension{length: l} = dim, acc) when l == 1,
+    do: to_unit(scale, %{dim | length: 0}, compose_acc_next(acc, "meter"))
+
+  def to_unit(%Scale{magnitude: m} = scale, %Dimension{length: l} = dim, acc) when l > 0 do
+    mag_rem = rem(m, l)
+    # move rem to coef
+    new_scale = Scale.mag_down(scale, mag_rem)
+
+    mag_div = div(new_scale.magnitude, l)
+    # rem is always 0 -> quotient is always integer (no float)
+
+    to_unit(
+      %{scale | magnitude: mag_div},
+      %{dim | length: 0},
+      compose_acc_next(acc, "meter_#{l}")
+    )
+  end
+
+  def to_unit(%Scale{} = scale, %Dimension{time: t} = dim, acc) when t < 0,
+    do: to_unit(scale, %{dim | time: -t}, compose_acc_next(acc, "per"))
+
+  def to_unit(%Scale{} = scale, %Dimension{time: t} = dim, acc) when t == 1,
+    do: to_unit(scale, %{dim | time: 0}, compose_acc_next(acc, "second"))
+
+  def to_unit(%Scale{magnitude: m} = scale, %Dimension{time: t} = dim, acc) when t > 0 do
+    mag_rem = rem(m, t)
+    # move rem to coef
+    new_scale = Scale.mag_down(scale, mag_rem)
+
+    mag_div = div(new_scale.magnitude, t)
+    # rem is always 0 -> quotient is always integer (no float)
+
+    to_unit(%{scale | magnitude: mag_div}, %{dim | time: 0}, compose_acc_next(acc, "second_#{t}"))
+  end
+
+  # TODO : better strategy for this ???
+  defp compose_acc_next(acc, next) when acc == "", do: acc <> next
+
+  defp compose_acc_next(acc, next) do
+    if not String.ends_with?(acc, "_") do
+      acc <> "_" <> next
+    else
+      acc <> next
+    end
+  end
 end

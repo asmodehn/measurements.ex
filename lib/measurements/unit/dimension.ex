@@ -3,6 +3,7 @@ defmodule Measurements.Unit.Dimension do
     `Measurements.Dimension` deals with the dimension of a unit and related conversion
   """
 
+  # TODO: use module atom instead ???
   defstruct time: 0,
             length: 0,
             mass: 0,

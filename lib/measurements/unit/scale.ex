@@ -25,6 +25,16 @@ defmodule Measurements.Unit.Scale do
 
   defdelegate ratio(d1, d2), to: Measurements.Multiplicative.Group, as: :ratio
 
+  @doc """
+  A simple way to adjust magnitude, by modifying coefficient.
+
+  Note magnitude can only going down, to avoid reducing precision of coefficient.
+  """
+  def mag_down(%__MODULE__{} = s, n),
+    do: %{s | coefficient: s.coefficient * 10 ** n, magnitude: s.magnitude - n}
+
+  # TODO : exponent effect on scale.. (see to_unit in Parser module)
+
   def convert(%__MODULE__{} = scale) do
     fn v -> v * to_value(scale) end
   end
