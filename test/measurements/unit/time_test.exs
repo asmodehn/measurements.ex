@@ -94,6 +94,7 @@ defmodule Measurements.Unit.TimeTest do
   end
 
   describe "unit/2" do
+    @tag :second
     test "supports Scale and Dimension as arguments to get second" do
       {:ok, :second} = Time.unit(Scale.new(), %Dimension{time: 1})
       {:ok, :millisecond} = Time.unit(Scale.new(-3), %Dimension{time: 1})
@@ -120,10 +121,10 @@ defmodule Measurements.Unit.TimeTest do
       assert unit == :megahertz
       assert convert.(42) == 420
 
-      {:error, convert, unit} = Time.unit(Scale.new(-7), %Dimension{time: -1})
+      {:error, convert, unit} = Time.unit(Scale.new(-7), %Dimension{time: -1}) |> IO.inspect()
       assert unit == :hertz
-      # Note : round is needed because scale conversion produce imprecise float...
-      # TODO : how to fix that ??
+      # Note : round is needed because scale conversion may produce imprecise float...
+      # HOW to fix that ?? -> define a more precise unit, ie. `:nanohertz` in the Appropriate `Time` module.
       assert Float.round(convert.(42), 7) == 0.0000042
     end
   end

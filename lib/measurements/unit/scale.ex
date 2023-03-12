@@ -32,6 +32,7 @@ defmodule Measurements.Unit.Scale do
 
   defdelegate prod(d1, d2), to: Measurements.Multiplicative.Semigroup, as: :product
 
+  # TODO :shortcut when d2 == 1 ?? or bad idea ?
   defdelegate ratio(d1, d2), to: Measurements.Multiplicative.Group, as: :ratio
 
   @doc """

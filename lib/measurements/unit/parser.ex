@@ -136,7 +136,7 @@ defmodule Measurements.Unit.Parser do
 
   @doc """
   A straight forward way to generate a unit atom. 
-  This might not be the one desired however, since scale can be shifted between the various unit dimensions.
+  This might not be the one desired however, since scale can be shifted between the various unit dimensions (eg. millimeter per second /vs/ meter per kilosecond)
 
   Choice is a matter of preference and is left to the user, `Unit.equal?` should be used to check for unit equality and replace the atom where needed during computations.
 
