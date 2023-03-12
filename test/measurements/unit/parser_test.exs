@@ -247,5 +247,17 @@ defmodule Measurements.Unit.ParserTest do
       {:ok, scale, dim} = Parser.parse(:meter_per_second_2)
       assert Parser.to_unit(scale, dim) == {:meter_per_second_2, Scale.new()}
     end
+
+    test "on error, provides correct conversion when possible" do
+      {:kilometer, scale} =
+        Parser.to_unit(%Scale{coefficient: 1, magnitude: 5}, %Dimension{length: 1})
+
+      assert Scale.convert(scale).(42) == 4200
+
+      {:kilometer, scale} =
+        Parser.to_unit(%Scale{coefficient: 42, magnitude: 5}, %Dimension{length: 1})
+
+      assert Scale.convert(scale).(1) == 4200
+    end
   end
 end

@@ -3,21 +3,30 @@ defmodule Measurements.Unit.Scale do
     `Measurements.Scale` deals with the scale of a unit and related conversion
   """
 
+  # TODO : maybe integrate that into Unit module itself ??
+
+  alias Measurements.Unit.Dimension
+
   defstruct magnitude: 0,
             # default as float to cover both float and int usecase for property test
-            coefficient: 1.0
+            coefficient: 1.0,
+            dimension: %Dimension{}
 
   @typedoc "Scale Type"
   @type t :: %__MODULE__{
+          # TODO : rename to :scale
           magnitude: integer,
-          coefficient: integer | float
+          coefficient: integer | float,
+          dimension: Dimension.t()
         }
 
   # coeff defaults to in for precision and simplicity.
-  def new(magnitude \\ 0, coefficient \\ 1) do
+  def new(magnitude \\ 0, coefficient \\ 1, dimension \\ %Dimension{}) do
     %__MODULE__{
       magnitude: magnitude,
-      coefficient: coefficient
+      coefficient: coefficient,
+      # WIP
+      dimension: dimension
     }
   end
 
@@ -152,7 +161,8 @@ definst Measurements.Multiplicative.Semigroup, for: Measurements.Unit.Scale do
   def product(%Measurements.Unit.Scale{} = d1, %Measurements.Unit.Scale{} = d2) do
     %Measurements.Unit.Scale{
       coefficient: d1.coefficient * d2.coefficient,
-      magnitude: d1.magnitude + d2.magnitude
+      magnitude: d1.magnitude + d2.magnitude,
+      dimension: Measurements.Unit.Dimension.sum(d1.dimension, d2.dimension)
     }
   end
 end
@@ -168,14 +178,16 @@ definst Measurements.Multiplicative.Group, for: Measurements.Unit.Scale do
     %Measurements.Unit.Scale{
       # special case: avoiding division.
       coefficient: 1,
-      magnitude: -d.magnitude
+      magnitude: -d.magnitude,
+      dimension: Measurements.Unit.Dimension.opposite(d.dimension)
     }
   end
 
   def inverse(%Measurements.Unit.Scale{} = d) do
     %Measurements.Unit.Scale{
       coefficient: 1 / d.coefficient,
-      magnitude: -d.magnitude
+      magnitude: -d.magnitude,
+      dimension: Measurements.Unit.Dimension.opposite(d.dimension)
     }
   end
 end

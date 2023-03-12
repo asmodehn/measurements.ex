@@ -4,6 +4,7 @@
 Mix.install([
   {:type_class, "~> 1.2"},
   {:witchcraft, "~> 1.0"},
+  {:nimble_parsec, "~> 1.0"},
   {:measurements, path: "."},
   {:vega_lite, "~> 0.1.6"},
   {:kino_vega_lite, "~> 0.1.7"}

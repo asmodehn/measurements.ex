@@ -23,7 +23,7 @@ defmodule Measurements.Unit.Parser.TMPAPI do
   end
 
   def unit(str) do
-    case str |> Enum.join("") do
+    case str |> Enum.join("") |> String.replace_suffix("s", "") do
       "per_second" -> {Time, -1}
       "second" -> {Time, 1}
       "hertz" -> {Time, -1}
@@ -84,7 +84,13 @@ defmodule Measurements.Unit.Parser do
 
   core_unit =
     optional(string("per_"))
-    |> concat(choice([string("second"), string("hertz"), string("meter")]))
+    |> concat(
+      choice([
+        string("second") |> optional(string("s")),
+        string("hertz"),
+        string("meter") |> optional(string("s"))
+      ])
+    )
     |> reduce({TMPAPI, :unit, []})
     |> label(
       "optional prefix \"per_\" with a core unit among these: \"second\", \"hertz\", \"meter\""
@@ -122,7 +128,7 @@ defmodule Measurements.Unit.Parser do
       [scale, {mod, pow}, exp] -> {Scale.new(scale * exp), mod.with_dimension(exp * pow)}
     end)
     |> Enum.reduce({:ok, Scale.new(), Dimension.new()}, fn
-      {s, d}, {:ok, accs, accd} -> {:ok, Scale.prod(accs, s), Dimension.product(accd, d)}
+      {s, d}, {:ok, accs, accd} -> {:ok, Scale.prod(accs, s), Dimension.sum(accd, d)}
     end)
 
     # TODO :return error when parse is not possible
@@ -150,8 +156,7 @@ defmodule Measurements.Unit.Parser do
           lintensity: 0
         },
         acc
-      )
-      when s.coefficient == 1 do
+      ) do
     # convert to readable unit when appropriate -> very special cases
     final_acc = acc |> String.replace_prefix("per_second", "hertz")
 

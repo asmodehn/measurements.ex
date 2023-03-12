@@ -55,9 +55,9 @@ defmodule Measurements.Unit.Dimension do
     %{d | lintensity: d.lintensity + n}
   end
 
-  defdelegate product(d1, d2), to: Measurements.Multiplicative.Semigroup, as: :product
-
-  defdelegate ratio(d1, d2), to: Measurements.Multiplicative.Group, as: :ratio
+  defdelegate sum(d1, d2), to: Witchcraft.Semigroup, as: :append
+  defdelegate delta(d1, d2), to: Measurements.Additive.Group, as: :delta
+  defdelegate opposite(d1), to: Measurements.Additive.Group, as: :inverse
 end
 
 defimpl String.Chars, for: Measurements.Unit.Dimension do
@@ -96,8 +96,8 @@ end
 
 import TypeClass
 
-definst Measurements.Multiplicative.Semigroup, for: Measurements.Unit.Dimension do
-  def product(%Measurements.Unit.Dimension{} = d1, %Measurements.Unit.Dimension{} = d2) do
+definst Witchcraft.Semigroup, for: Measurements.Unit.Dimension do
+  def append(%Measurements.Unit.Dimension{} = d1, %Measurements.Unit.Dimension{} = d2) do
     %Measurements.Unit.Dimension{
       time: d1.time + d2.time,
       length: d1.length + d2.length,
@@ -110,13 +110,13 @@ definst Measurements.Multiplicative.Semigroup, for: Measurements.Unit.Dimension 
   end
 end
 
-definst Measurements.Multiplicative.Monoid, for: Measurements.Unit.Dimension do
-  def init(_d) do
+definst Witchcraft.Monoid, for: Measurements.Unit.Dimension do
+  def empty(_d) do
     %Measurements.Unit.Dimension{}
   end
 end
 
-definst Measurements.Multiplicative.Group, for: Measurements.Unit.Dimension do
+definst Measurements.Additive.Group, for: Measurements.Unit.Dimension do
   def inverse(%Measurements.Unit.Dimension{} = d) do
     d
     |> Map.update!(:time, &(-&1))
