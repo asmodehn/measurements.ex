@@ -72,6 +72,7 @@ defmodule Measurements.Unit.LengthTest do
   end
 
   describe "unit/2" do
+    @tag :meter
     test "supports Scale and Dimension as arguments to get meter" do
       {:ok, :kilometer} = Length.unit(Scale.new(3), %Dimension{length: 1})
       {:ok, :meter} = Length.unit(Scale.new(0), %Dimension{length: 1})

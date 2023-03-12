@@ -15,7 +15,7 @@ defmodule Measurements.UnitTest do
       assert Unit.time(:nanosecond) == {:ok, :nanosecond}
     end
 
-    test "supports aliases" do
+    test "supports plural form" do
       assert Unit.time(:seconds) == {:ok, :second}
       assert Unit.time(:milliseconds) == {:ok, :millisecond}
       assert Unit.time(:microseconds) == {:ok, :microsecond}
@@ -32,7 +32,7 @@ defmodule Measurements.UnitTest do
       assert Unit.length(:nanometer) == {:ok, :nanometer}
     end
 
-    test "support aliases" do
+    test "support plural form" do
       assert Unit.length(:kilometers) == {:ok, :kilometer}
       assert Unit.length(:meters) == {:ok, :meter}
       assert Unit.length(:millimeters) == {:ok, :millimeter}
@@ -62,7 +62,7 @@ defmodule Measurements.UnitTest do
       assert Unit.new(nil) == {:ok, nil}
     end
 
-    test "supports aliases" do
+    test "supports plural form" do
       assert Unit.new(:micrometers) == {:ok, :micrometer}
       assert Unit.new(:milliseconds) == {:ok, :millisecond}
     end

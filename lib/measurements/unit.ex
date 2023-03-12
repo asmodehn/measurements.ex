@@ -34,10 +34,12 @@ defmodule Measurements.Unit do
 
   alias Measurements.Unit.Time
   alias Measurements.Unit.Length
-  alias Measurements.Unit.Derived
+  # alias Measurements.Unit.Derived
 
   alias Measurements.Unit.Scale
   alias Measurements.Unit.Dimension
+
+  alias Measurements.Unit.Parser
 
   @typedoc "Unit Type"
   @type t :: atom()
@@ -48,11 +50,10 @@ defmodule Measurements.Unit do
   Normalizes a custom time unit to a known one.
   """
   @spec time(atom) :: {:ok, t} | {:error, (value -> value), t}
-  @spec time(atom, integer) :: {:ok, t} | {:error, (value -> value), t}
-  def time(unit, power_ten_scale \\ 0) do
+  def time(unit) do
     if unit in Time.__units() or Time.__alias(unit) do
       Time.unit(
-        Scale.prod(Scale.new(power_ten_scale), Time.scale(unit)),
+        Time.scale(unit),
         Time.dimension(unit)
       )
     else
@@ -64,12 +65,11 @@ defmodule Measurements.Unit do
   Normalizes a custom length unit to a known one
   """
   @spec length(atom) :: {:ok, t} | {:error, (value -> value), t}
-  @spec length(atom, integer) :: {:ok, t} | {:error, (value -> value), t}
-  def length(unit, power_ten_scale \\ 0) do
+  def length(unit) do
     if unit in Length.__units() or Length.__alias(unit) do
       # let the Length module handle it
       Length.unit(
-        Scale.prod(Scale.new(power_ten_scale), Length.scale(unit)),
+        Length.scale(unit),
         Length.dimension(unit)
       )
     else
@@ -102,61 +102,74 @@ defmodule Measurements.Unit do
   def new(nil), do: {:ok, nil}
 
   def new(unit) do
-    case module(unit) do
-      {:ok, unit_module} ->
-        unit_module.unit(
-          unit_module.scale(unit),
-          unit_module.dimension(unit)
-        )
-
-      {:error, :unit_module_not_found} ->
-        raise RuntimeError, message: "#{unit} not found in Measurements.Unit.*"
+    # parse and regen
+    case Parser.parse(unit) do
+      {:ok, scale, dimension} -> new(scale, dimension)
+      {:error, reason} -> raise RuntimeError, message: reason
     end
+
+    # case module(unit) do
+    #   {:ok, unit_module} ->
+    #     unit_module.unit(
+    #       unit_module.scale(unit),
+    #       unit_module.dimension(unit)
+    #     )
+
+    #   {:error, :unit_module_not_found} ->
+    #     raise RuntimeError, message: "#{unit} not found in Measurements.Unit.*"
+    # end
   end
 
   # To retrieve a unit atom from a scale and dimension
-  def new(%Scale{} = s, %Dimension{time: t, length: 0} = d) when t != 0 do
-    Time.unit(s, d)
-  end
-
-  def new(%Scale{} = s, %Dimension{time: 0, length: l} = d) when l != 0 do
-    Length.unit(s, d)
-  end
-
-  # else it is a derived unit
-
   def new(%Scale{} = s, %Dimension{} = d) do
-    Derived.unit(s, d)
+    # |> IO.inspect()
+    {unit_atom, scale} = Parser.to_unit(s, d)
+
+    if scale == %Scale{} do
+      {:ok, unit_atom}
+    else
+      {:error, Scale.convert(scale), unit_atom}
+    end
   end
+
+  # def new(%Scale{} = s, %Dimension{time: t, length: 0} = d) when t != 0 do
+  #   Time.unit(s, d)
+  # end
+
+  # def new(%Scale{} = s, %Dimension{time: 0, length: l} = d) when l != 0 do
+  #   Length.unit(s, d)
+  # end
+
+  # # else it is a derived unit
+
+  # def new(%Scale{} = s, %Dimension{} = d) do
+  #   Derived.unit(s, d)
+  # end
 
   @doc """
   The dimension of the unit
   """
+  # TODO :review hte API, alwys go with a Scale...
   @spec dimension(atom) :: {:ok, Dimension.t()} | {:error, term}
   def dimension(nil), do: {:ok, %Dimension{}}
 
   def dimension(unit) do
-    case module(unit) do
-      {:ok, unit_module} ->
-        {:ok, unit_module.dimension(unit)}
-
-      {:error, what} ->
-        raise what
+    case Parser.parse(unit) do
+      {:ok, _scale, dimension} -> {:ok, dimension}
+      {:error, reason} -> raise RuntimeError, message: reason
     end
   end
 
   @doc """
   """
+  # TODO :review hte API, alwys go with a Dimension...
   @spec scale(atom) :: {:ok, Scale.t()} | {:error, term}
   def scale(nil), do: {:ok, %Scale{}}
 
   def scale(unit) do
-    case module(unit) do
-      {:ok, unit_module} ->
-        {:ok, unit_module.scale(unit)}
-
-      {:error, what} ->
-        raise what
+    case Parser.parse(unit) do
+      {:ok, scale, _dimension} -> {:ok, scale}
+      {:error, reason} -> raise RuntimeError, message: reason
     end
   end
 
@@ -254,10 +267,12 @@ defmodule Measurements.Unit do
          {^u2, {:ok, s2}, {:ok, d2}} <-
            {u2, Measurements.Unit.scale(u2), Measurements.Unit.dimension(u2)} do
       # |> IO.inspect()
-      prod_dim = Measurements.Unit.Dimension.product(d1, d2)
+      prod_dim = Measurements.Unit.Dimension.sum(d1, d2)
       # |> IO.inspect()
       prod_scale = Measurements.Unit.Scale.prod(s1, s2)
-      # TODO :how to show that the power of the dimension will influence the value ????
+      # |> IO.inspect()
+      # prod_dim_scale= Measurements.Unit.scale(prod_dim)
+      # |> IO.inspect()
 
       Measurements.Unit.new(prod_scale, prod_dim)
     else
@@ -288,7 +303,7 @@ defmodule Measurements.Unit do
            {u2, Measurements.Unit.scale(u2), Measurements.Unit.dimension(u2)} do
       Measurements.Unit.new(
         Measurements.Unit.Scale.ratio(s1, s2),
-        Measurements.Unit.Dimension.ratio(d1, d2)
+        Measurements.Unit.Dimension.delta(d1, d2)
       )
     else
       {unit, {:error, reason}, {:ok, d}} ->
