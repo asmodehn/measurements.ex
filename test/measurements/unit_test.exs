@@ -8,6 +8,7 @@ defmodule Measurements.UnitTest do
   alias Measurements.Unit.Length
 
   describe "time/1 normalizes a unit if it represents time" do
+    @tag :thisone
     test "second, millisecond, microsecond, nanosecond" do
       assert Unit.time(:second) == {:ok, :second}
       assert Unit.time(:millisecond) == {:ok, :millisecond}
@@ -139,6 +140,7 @@ defmodule Measurements.UnitTest do
       assert Unit.product(:second, :second) == {:ok, :second_2}
     end
 
+    @tag :product
     test "multiplies related unit with different scales, converting where needed" do
       {:error, convert_value, :millisecond_2} = Unit.product(:second, :millisecond)
 

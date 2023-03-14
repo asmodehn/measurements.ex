@@ -3,6 +3,17 @@ defmodule Measurements.Unit.Dimension do
     `Measurements.Dimension` deals with the dimension of a unit and related conversion
   """
 
+  alias Measurements.Unit.{
+    Time,
+    Length,
+    Mass,
+    Current,
+    Temperature,
+    Substance,
+    Lintensity,
+    Derived
+  }
+
   # TODO: use module atom instead ???
   defstruct time: 0,
             length: 0,
@@ -58,6 +69,106 @@ defmodule Measurements.Unit.Dimension do
   defdelegate sum(d1, d2), to: Witchcraft.Semigroup, as: :append
   defdelegate delta(d1, d2), to: Measurements.Additive.Group, as: :delta
   defdelegate opposite(d1), to: Measurements.Additive.Group, as: :inverse
+
+  def module(
+        %__MODULE__{
+          time: t,
+          length: 0,
+          mass: 0,
+          current: 0,
+          temperature: 0,
+          substance: 0,
+          lintensity: 0
+        } = scale
+      )
+      when t != 0,
+      do: {:ok, Time}
+
+  def module(
+        %__MODULE__{
+          time: 0,
+          length: l,
+          mass: 0,
+          current: 0,
+          temperature: 0,
+          substance: 0,
+          lintensity: 0
+        } = scale
+      )
+      when l != 0,
+      do: {:ok, Length}
+
+  def module(
+        %__MODULE__{
+          time: 0,
+          length: 0,
+          mass: m,
+          current: 0,
+          temperature: 0,
+          substance: 0,
+          lintensity: 0
+        } = scale
+      )
+      when m != 0,
+      do: {:ok, Mass}
+
+  def module(
+        %__MODULE__{
+          time: 0,
+          length: 0,
+          mass: 0,
+          current: c,
+          temperature: 0,
+          substance: 0,
+          lintensity: 0
+        } = scale
+      )
+      when c != 0,
+      do: {:ok, Current}
+
+  def module(
+        %__MODULE__{
+          time: 0,
+          length: 0,
+          mass: 0,
+          current: 0,
+          temperature: th,
+          substance: 0,
+          lintensity: 0
+        } = scale
+      )
+      when th != 0,
+      do: {:ok, Temperature}
+
+  def module(
+        %__MODULE__{
+          time: 0,
+          length: 0,
+          mass: 0,
+          current: 0,
+          temperature: 0,
+          substance: s,
+          lintensity: 0
+        } = scale
+      )
+      when s != 0,
+      do: {:ok, Substance}
+
+  def module(
+        %__MODULE__{
+          time: 0,
+          length: 0,
+          mass: 0,
+          current: 0,
+          temperature: 0,
+          substance: 0,
+          lintensity: li
+        } = scale
+      )
+      when li != 0,
+      do: {:ok, Lintensity}
+
+  def module(%__MODULE__{} = scale), do: Derived
 end
 
 defimpl String.Chars, for: Measurements.Unit.Dimension do

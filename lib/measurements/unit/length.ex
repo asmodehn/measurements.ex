@@ -79,19 +79,22 @@ defmodule Measurements.Unit.Length do
   @impl Unitable
   @spec unit(Scale.t(), Dimension.t()) :: {:ok, atom} | {:error, fun, atom}
   def unit(
-        %Scale{coefficient: 1} = s,
-        %Dimension{
-          time: 0,
-          length: l,
-          mass: 0,
-          current: 0,
-          temperature: 0,
-          substance: 0,
-          lintensity: 0
-        } = d,
+        %Scale{
+          coefficient: 1,
+          dimension: %Dimension{
+            time: 0,
+            length: l,
+            mass: 0,
+            current: 0,
+            temperature: 0,
+            substance: 0,
+            lintensity: 0
+          }
+        } = s,
         convert_mag_acc \\ 0
       ) do
-    {unit_atom, scale} = Parser.to_unit(s, d) |> IO.inspect()
+    # |> IO.inspect()
+    {unit_atom, scale} = Parser.to_unit(s)
 
     cond do
       # TODO Notice how error is not really an error, just a sign that conversion to apply is not identity.
@@ -110,10 +113,10 @@ defmodule Measurements.Unit.Length do
       # recurse on magnitude towards 0 if the normalized unit is not recognised.
       # Note we reuse s and ignore previous parsing.
       s.magnitude > 0 ->
-        unit(%{s | magnitude: s.magnitude - 1}, d, convert_mag_acc + 1)
+        unit(%{s | magnitude: s.magnitude - 1}, convert_mag_acc + 1)
 
       s.magnitude < 0 ->
-        unit(%{s | magnitude: s.magnitude + 1}, d, convert_mag_acc - 1)
+        unit(%{s | magnitude: s.magnitude + 1}, convert_mag_acc - 1)
 
       # otherwise ignore parser result, use meter and dont forget accumulated convert scale
       l > 0 ->
@@ -128,14 +131,40 @@ defmodule Measurements.Unit.Length do
   end
 
   @spec to_string(atom) :: String.t()
+  def to_string(kilometer()), do: "km"
+  def to_string(meter()), do: "m"
+  def to_string(millimeter()), do: "mm"
+  def to_string(micrometer()), do: "μm"
+  def to_string(nanometer()), do: "nm"
+
   def to_string(unit) when is_atom(unit) do
-    case unit do
-      kilometer() -> "km"
-      meter() -> "m"
-      millimeter() -> "mm"
-      micrometer() -> "μm"
-      nanometer() -> "nm"
-    end
+    {:ok, %Scale{coefficient: 1} = scale, _dim} = Parser.parse(unit)
+
+    dim =
+      cond do
+        scale.dimension.length > 1 -> "s**#{scale.dimension.length}"
+        scale.dimension.length == 1 -> "s"
+        scale.dimension.length < 0 -> "s#{scale.dimension.length}"
+      end
+
+    scale_prefix =
+      cond do
+        scale.magnitude >= 18 * scale.dimension.length -> "exa"
+        scale.magnitude >= 15 * scale.dimension.length -> "peta"
+        scale.magnitude >= 12 * scale.dimension.length -> "tera"
+        scale.magnitude >= 9 * scale.dimension.length -> "giga"
+        scale.magnitude >= 6 * scale.dimension.length -> "M"
+        scale.magnitude >= 3 * scale.dimension.length -> "k"
+        scale.magnitude >= 0 * scale.dimension.length -> ""
+        scale.magnitude >= -3 * scale.dimension.length -> "m"
+        scale.magnitude >= -6 * scale.dimension.length -> "μ"
+        scale.magnitude >= -9 * scale.dimension.length -> "n"
+        scale.magnitude >= -12 * scale.dimension.length -> "p"
+        scale.magnitude >= -15 * scale.dimension.length -> "f"
+        true -> "a"
+      end
+
+    scale_prefix <> dim
   end
 
   defp argument_error_message(other),

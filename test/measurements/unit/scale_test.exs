@@ -65,4 +65,6 @@ defmodule Measurements.Unit.ScaleTest do
              }
     end
   end
+
+  # TODO : test dimension
 end

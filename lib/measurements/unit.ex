@@ -52,10 +52,11 @@ defmodule Measurements.Unit do
   @spec time(atom) :: {:ok, t} | {:error, (value -> value), t}
   def time(unit) do
     if unit in Time.__units() or Time.__alias(unit) do
-      Time.unit(
-        Time.scale(unit),
-        Time.dimension(unit)
-      )
+      new(unit)
+      # Time.unit(
+      #   Time.scale(unit),
+      #   Time.dimension(unit)
+      # )
     else
       {:error, :not_a_supported_time_unit}
     end
@@ -67,11 +68,12 @@ defmodule Measurements.Unit do
   @spec length(atom) :: {:ok, t} | {:error, (value -> value), t}
   def length(unit) do
     if unit in Length.__units() or Length.__alias(unit) do
-      # let the Length module handle it
-      Length.unit(
-        Length.scale(unit),
-        Length.dimension(unit)
-      )
+      new(unit)
+      # # let the Length module handle it
+      # Length.unit(
+      #   Length.scale(unit),
+      #   Length.dimension(unit)
+      # )
     else
       {:error, :not_a_supported_length_unit}
     end
@@ -101,10 +103,10 @@ defmodule Measurements.Unit do
   @spec new(atom) :: {:ok, t} | {:error, (value -> value), t}
   def new(nil), do: {:ok, nil}
 
-  def new(unit) do
+  def new(unit) when is_atom(unit) do
     # parse and regen
     case Parser.parse(unit) do
-      {:ok, scale, dimension} -> new(scale, dimension)
+      {:ok, scale, dimension} -> new(%{scale | dimension: dimension})
       {:error, reason} -> raise RuntimeError, message: reason
     end
 
@@ -120,16 +122,20 @@ defmodule Measurements.Unit do
     # end
   end
 
-  # To retrieve a unit atom from a scale and dimension
-  def new(%Scale{} = s, %Dimension{} = d) do
-    # |> IO.inspect()
-    {unit_atom, scale} = Parser.to_unit(s, d)
+  def new(%Scale{dimension: _d} = s) do
+    {unit_atom, scale} = Parser.to_unit(s)
 
     if scale == %Scale{} do
       {:ok, unit_atom}
     else
       {:error, Scale.convert(scale), unit_atom}
     end
+  end
+
+  # To retrieve a unit atom from a scale and dimension
+  # OLD API backward compat
+  def new(%Scale{dimension: %Dimension{}} = s, %Dimension{} = d) do
+    new(%{s | dimension: d})
   end
 
   # def new(%Scale{} = s, %Dimension{time: t, length: 0} = d) when t != 0 do
@@ -251,8 +257,12 @@ defmodule Measurements.Unit do
   @spec to_string(atom) :: String.t()
   def to_string(nil), do: ""
 
+  # TODO : handle unit_#{exponent} !
+  # TODO : handle per_unit !
   def to_string(unit) do
-    {:ok, unit_module} = module(unit)
+    {:ok, scale} = scale(unit)
+    {:ok, unit_module} = Scale.module(scale)
+    # {:ok, unit_module} = module(unit |> IO.inspect()) |> IO.inspect()
     unit_module.to_string(unit)
   end
 
@@ -274,7 +284,7 @@ defmodule Measurements.Unit do
       # prod_dim_scale= Measurements.Unit.scale(prod_dim)
       # |> IO.inspect()
 
-      Measurements.Unit.new(prod_scale, prod_dim)
+      Measurements.Unit.new(prod_scale)
     else
       {unit, {:error, reason}, {:ok, d}} ->
         raise ArgumentError,

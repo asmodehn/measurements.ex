@@ -84,7 +84,7 @@ defmodule Measurements.Unit.Time do
   # Note now we directly invoke parser. we dont care about aliases and if unit is present or not to retrieve its scale
   def scale(unit) when is_atom(unit) do
     case Parser.parse(unit) do
-      {:ok, scale, _dimension} -> scale
+      {:ok, scale, dimension} -> %{scale | dimension: dimension}
       {:error, reason} -> raise ArgumentError, reason
     end
   end
@@ -92,33 +92,38 @@ defmodule Measurements.Unit.Time do
   def scale(ps) when is_integer(ps) and ps > 0 do
     direct = Scale.from_value(ps)
     # inversion of sign here as in "per second"
-    %{direct | magnitude: -direct.magnitude}
+    scale = %{direct | magnitude: -direct.magnitude}
+
+    %{scale | dimension: Dimension.new() |> Dimension.with_time(1)}
   end
 
   def scale(other), do: raise(ArgumentError, message: argument_error_message(other))
 
   @behaviour Unitable
   @impl Unitable
-  @spec unit(Scale.t(), Dimension.t()) :: {:ok, atom} | {:error, fun, atom}
+  @spec unit(Scale.t()) :: {:ok, atom} | {:error, fun, atom}
   def unit(
-        %Scale{coefficient: 1} = s,
-        %Dimension{
-          time: t,
-          length: 0,
-          mass: 0,
-          current: 0,
-          temperature: 0,
-          substance: 0,
-          lintensity: 0
-        } = d,
+        %Scale{
+          coefficient: 1,
+          dimension: %Dimension{
+            time: t,
+            length: 0,
+            mass: 0,
+            current: 0,
+            temperature: 0,
+            substance: 0,
+            lintensity: 0
+          }
+        } = s,
         convert_mag_acc \\ 0
       ) do
-    {unit_atom, scale} = Parser.to_unit(s, d) |> IO.inspect()
+    # |> IO.inspect()
+    {unit_atom, scale} = Parser.to_unit(s)
 
     cond do
       # TODO Notice how error is not really an error, just a sign that conversion to apply is not identity.
       # => simplify API and logic ?? 
-      scale == %Scale{} and convert_mag_acc == 0 and unit_atom in __units() ->
+      scale.magnitude == 0 and convert_mag_acc == 0 and unit_atom in __units() ->
         {:ok, unit_atom}
 
       # if scale is not exactly 1
@@ -131,10 +136,10 @@ defmodule Measurements.Unit.Time do
       # recurse on magnitude towards 0 if the normalized unit is not recognised.
       # Note we reuse s and ignore previous parsing.
       s.magnitude > 0 ->
-        unit(%{s | magnitude: s.magnitude - 1}, d, convert_mag_acc + 1)
+        unit(%{s | magnitude: s.magnitude - 1}, convert_mag_acc + 1)
 
       s.magnitude < 0 ->
-        unit(%{s | magnitude: s.magnitude + 1}, d, convert_mag_acc - 1)
+        unit(%{s | magnitude: s.magnitude + 1}, convert_mag_acc - 1)
 
       # rely on default unit if the normalized unit is not recognised here.
       # And ignore parser result
@@ -152,17 +157,43 @@ defmodule Measurements.Unit.Time do
   end
 
   @spec to_string(atom) :: String.t()
+  def to_string(second()), do: "s"
+  def to_string(millisecond()), do: "ms"
+  def to_string(microsecond()), do: "μs"
+  def to_string(nanosecond()), do: "ns"
+  def to_string(hertz()), do: "Hz"
+  def to_string(kilohertz()), do: "kHz"
+  def to_string(megahertz()), do: "MHz"
+  def to_string(gigahertz()), do: "GHz"
+
   def to_string(unit) when is_atom(unit) do
-    case unit do
-      second() -> "s"
-      millisecond() -> "ms"
-      microsecond() -> "μs"
-      nanosecond() -> "ns"
-      hertz() -> "Hz"
-      kilohertz() -> "kHz"
-      megahertz() -> "MHz"
-      gigahertz() -> "GHz"
-    end
+    {:ok, %Scale{coefficient: 1} = scale, _dim} = Parser.parse(unit)
+
+    dim =
+      cond do
+        scale.dimension.time > 1 -> "s**#{scale.dimension.time}"
+        scale.dimension.time == 1 -> "s"
+        scale.dimension.time < 0 -> "s#{scale.dimension.time}"
+      end
+
+    scale_prefix =
+      cond do
+        scale.magnitude >= 18 * scale.dimension.time -> "exa"
+        scale.magnitude >= 15 * scale.dimension.time -> "peta"
+        scale.magnitude >= 12 * scale.dimension.time -> "tera"
+        scale.magnitude >= 9 * scale.dimension.time -> "giga"
+        scale.magnitude >= 6 * scale.dimension.time -> "M"
+        scale.magnitude >= 3 * scale.dimension.time -> "k"
+        scale.magnitude >= 0 * scale.dimension.time -> ""
+        scale.magnitude >= -3 * scale.dimension.time -> "m"
+        scale.magnitude >= -6 * scale.dimension.time -> "μ"
+        scale.magnitude >= -9 * scale.dimension.time -> "n"
+        scale.magnitude >= -12 * scale.dimension.time -> "p"
+        scale.magnitude >= -15 * scale.dimension.time -> "f"
+        true -> "a"
+      end
+
+    scale_prefix <> dim
   end
 
   def to_string(unit) when is_integer(unit), do: " @ #{unit} Hz"

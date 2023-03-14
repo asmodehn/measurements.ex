@@ -47,9 +47,11 @@ defmodule Measurements.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:type_class, "~> 1.2"},
+      # {:type_class, "~> 1.2"},
       # {:type_class, path: "/home/alexv/Projects/elixir-playground/type_class", override: true},
+      {:type_class, github: "asmodehn/type_class", branch: "equal_recursive", override: true},
       {:witchcraft, "~> 1.0"},
+      # {:witchcraft, path: "/home/alexv/Projects/elixir-playground/witchcraft", override: true},
       {:nimble_parsec, "~> 1.0"},
 
       # For tests

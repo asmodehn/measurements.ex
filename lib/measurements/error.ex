@@ -175,6 +175,12 @@ defimpl TypeClass.Property.Generator, for: Measurements.Error do
       )
 end
 
+# defimpl TypeClass.Property.Equal, for: Measurements.Error do
+#   def equal?(a, b)
+#     equal?(a.error, b.error) and equal?(a.unit, b.unit)
+#   end
+# end
+
 definst Witchcraft.Semigroup, for: Measurements.Error do
   require Measurements.Unit.Time
   require Measurements.Unit.Length
@@ -191,6 +197,7 @@ definst Witchcraft.Semigroup, for: Measurements.Error do
 
   def append(%Measurements.Error{} = e1, %Measurements.Error{} = e2)
       when e1.unit == e2.unit do
+    # IO.inspect("#{e1} + #{e2} -> ")
     %Measurements.Error{
       error: e1.error + e2.error,
       unit: e1.unit
