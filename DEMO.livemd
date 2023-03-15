@@ -2,7 +2,8 @@
 
 ```elixir
 Mix.install([
-  {:type_class, "~> 1.2"},
+  # {:type_class, "~> 1.2"},
+  {:type_class, github: "asmodehn/type_class", branch: "equal_recursive", override: true},
   {:witchcraft, "~> 1.0"},
   {:nimble_parsec, "~> 1.0"},
   {:measurements, path: "."},
@@ -15,7 +16,7 @@ alias VegaLite, as: Vl
 
 ## Introduction
 
-`measurements` is a package helping with manipulation of real physics quantities.
+`measurements` is a package helping with manipulation of real physical quantities.
 
 ## Usage
 
@@ -52,7 +53,7 @@ A measurement can be converted to another unit of the same dimension
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-Measurements.time(300, :second, 5) |> Measurements.Value.convert(:microsecond)
+Measurements.time(300, :second, 5) |> Measurements.convert(:microsecond)
 ```
 
 The best unit is chosen to avoid loosing precision. If the target unit is not better than the current one, the conversion is simply ignored.
@@ -60,7 +61,7 @@ The best unit is chosen to avoid loosing precision. If the target unit is not be
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-Measurements.time(300, :millisecond, 5) |> Measurements.Value.convert(:second)
+Measurements.time(300, :millisecond, 5) |> Measurements.convert(:second)
 ```
 
 A `:force` option is available, should anyone wish to force conversion at some point in their computation. But such a default allows to operate on measurements without knowing their precision, while remaining confident no precision in lost in various computations.
@@ -127,7 +128,7 @@ Therefore the `nil` Unit is just a constant, with potentially an error...
 
 ```elixir
 m1 = Measurements.length(4, :millimeter)
-m2 = Measurements.length(543, :micrometer, 2)
+m2 = Measurements.length(500, :micrometer, 2)
 Measurements.ratio(m1, m2)
 ```
 
@@ -135,10 +136,10 @@ We can verify this result, and maybe get an exact match, even if the value is a 
 
 ```elixir
 [
-  Measurements.ratio(m1, m2).value * 0.543 == 4,
+  Measurements.ratio(m1, m2).value * 0.500 == 4,
   # relative error recovery is a bit more involved.
   # Refer to Error propagation theory when in doubt (TODO link?)
-  Measurements.ratio(m1, m2).error * 543 / 2 == Measurements.ratio(m1, m2).value
+  Measurements.ratio(m1, m2).error * 500 / 2 == Measurements.ratio(m1, m2).value
 ]
 ```
 
@@ -173,9 +174,9 @@ As a specific operation that makes sense on localtime, there is `delta/2` that c
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-before = Measurements.Timestamp.now()
+before = Measurements.Timestamp.now() |> IO.inspect()
 Process.sleep(1000)
-now = Measurements.Timestamp.now()
+now = Measurements.Timestamp.now() |> IO.inspect()
 Measurements.Timestamp.delta(now, before)
 ```
 
@@ -184,9 +185,9 @@ Implicit conversion is also handled, albeit with `System` module directly withou
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-before = Measurements.Timestamp.now(:millisecond)
+before = Measurements.Timestamp.now(:millisecond) |> IO.inspect()
 Process.sleep(1000)
-now = Measurements.Timestamp.now(:microsecond)
+now = Measurements.Timestamp.now(:microsecond) |> IO.inspect()
 Measurements.Timestamp.delta(now, before)
 ```
 

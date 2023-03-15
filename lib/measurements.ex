@@ -22,6 +22,7 @@ defmodule Measurements do
 
   alias Measurements.Unit
   alias Measurements.Value
+  alias Measurements.Measurement
 
   @doc """
   Time Measurement.
@@ -79,6 +80,8 @@ defmodule Measurements do
     end
   end
 
+  defdelegate convert(m, unit), to: Measurement
+
   @doc """
   The sum of multiple measurements, with implicit unit conversion.
 
@@ -100,22 +103,26 @@ defmodule Measurements do
 
   def sum(%module{} = m1, %module{} = m2), do: module.sum(m1, m2)
 
-  def sum(%impl1{} = m1, %impl2{} = m2) do
+  def sum(m1, m2) do
     cond do
-      impl1.unit(m1) == impl2.unit(m2) ->
+      Measurement.unit(m1) == Measurement.unit(m2) ->
         Value.new(
-          impl1.value(m1) + impl2.value(m2),
-          impl1.unit(m1),
-          impl1.error(m1) + impl2.error(m2)
+          Measurement.value(m1) + Measurement.value(m2),
+          Measurement.unit(m1),
+          Measurement.error(m1) + Measurement.error(m2)
         )
 
-      Unit.dimension(impl1.unit(m1)) == Unit.dimension(impl2.unit(m2)) ->
-        m1 = impl1.convert(m1, impl2.unit(m2))
-        m2 = impl2.convert(m2, impl1.unit(m1))
-        sum(m1, m2)
-
       true ->
-        raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
+        with {:ok, s1} <- Unit.scale(m1.unit),
+             {:ok, s2} <- Unit.scale(m2.unit) do
+          if s1.dimension == s2.dimension do
+            m1 = Measurement.convert(m1, Measurement.unit(m2))
+            m2 = Measurement.convert(m2, Measurement.unit(m1))
+            sum(m1, m2)
+          else
+            raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
+          end
+        end
     end
   end
 
@@ -137,7 +144,7 @@ defmodule Measurements do
 
   """
   def scale(m1, n) when is_integer(n) do
-    Value.new(m1[:value] * n, m1[:unit], abs(m1.error * n))
+    Value.new(Measurement.value(m1) * n, Measurement.unit(m1), abs(Measurement.error(m1) * n))
   end
 
   @doc """
@@ -158,18 +165,29 @@ defmodule Measurements do
       }
 
   """
+
+  def delta(%module{} = m1, %module{} = m2), do: module.delta(m1, m2)
+
   def delta(m1, m2) do
     cond do
-      m1[:unit] == m2[:unit] ->
-        Value.new(m1[:value] - m2[:value], m1[:unit], m1[:error] + m2[:error])
-
-      Unit.dimension(m1[:unit]) == Unit.dimension(m2[:unit]) ->
-        m1 = Value.convert(m1, m2[:unit])
-        m2 = Value.convert(m2, m1[:unit])
-        delta(m1, m2)
+      Measurement.unit(m1) == Measurement.unit(m2) ->
+        Value.new(
+          Measurement.value(m1) - Measurement.value(m2),
+          Measurement.unit(m1),
+          Measurement.error(m1) + Measurement.error(m2)
+        )
 
       true ->
-        raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
+        with {:ok, s1} <- Unit.scale(Measurement.unit(m1)),
+             {:ok, s2} <- Unit.scale(Measurement.unit(m2)) do
+          if s1.dimension == s2.dimension do
+            m1 = Measurement.convert(m1, Measurement.unit(m2))
+            m2 = Measurement.convert(m2, Measurement.unit(m1))
+            delta(m1, m2)
+          else
+            raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
+          end
+        end
     end
   end
 
@@ -191,18 +209,20 @@ defmodule Measurements do
       }
 
   """
+  def ratio(%module{} = m1, %module{} = m2), do: module.ratio(m1, m2)
+
   def ratio(m1, m2) do
     cond do
-      m1[:unit] == m2[:unit] ->
+      Measurement.unit(m1) == Measurement.unit(m2) ->
         # note: relative error is computed as float temporarily (quotient is supposed to always be small)
         # For error we rely on float precision. Other approximations are already made in Error propagation theory anyway.
-        m1_rel_err = m1[:error] / m1[:value]
-        m2_rel_err = m2[:error] / m2[:value]
+        m1_rel_err = Measurement.error(m1) / Measurement.value(m1)
+        m2_rel_err = Measurement.error(m2) / Measurement.value(m2)
 
         value =
-          if rem(m1[:value], m2[:value]) == 0,
-            do: div(m1[:value], m2[:value]),
-            else: m1[:value] / m2[:value]
+          if rem(Measurement.value(m1), Measurement.value(m2)) == 0,
+            do: div(Measurement.value(m1), Measurement.value(m2)),
+            else: Measurement.value(m1) / Measurement.value(m2)
 
         error = abs(value * (m1_rel_err + m2_rel_err))
 
@@ -211,13 +231,17 @@ defmodule Measurements do
         # TMP: force to scale 0 if unit is nil -> constant
         Value.new(value, nil, error)
 
-      Unit.dimension(m1[:unit]) == Unit.dimension(m2[:unit]) ->
-        m1 = Value.convert(m1, m2[:unit])
-        m2 = Value.convert(m2, m1[:unit])
-        ratio(m1, m2)
-
       true ->
-        raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
+        with {:ok, s1} <- Unit.scale(Measurement.unit(m1)),
+             {:ok, s2} <- Unit.scale(Measurement.unit(m2)) do
+          if s1.dimension == s2.dimension do
+            m1 = Measurement.convert(m1, Measurement.unit(m2))
+            m2 = Measurement.convert(m2, Measurement.unit(m1))
+            ratio(m1, m2)
+          else
+            raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
+          end
+        end
     end
   end
 
