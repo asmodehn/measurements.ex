@@ -160,9 +160,6 @@ defmodule Measurements.TimestampTest do
     end
   end
 
-  describe "convert/2" do
-  end
-
   describe "sum/2" do
     test "sum two timestamps of same origin as a time value" do
       System.OriginalMock
@@ -189,6 +186,10 @@ defmodule Measurements.TimestampTest do
                error: 0
              }
     end
+  end
+
+  describe "Measurement protocol" do
+    # TODO
   end
 
   # TODO : test protocol String.Chars

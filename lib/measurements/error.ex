@@ -205,14 +205,15 @@ definst Witchcraft.Semigroup, for: Measurements.Error do
   end
 
   def append(%Measurements.Error{} = e1, %Measurements.Error{} = e2) do
-    cond do
-      Measurements.Unit.dimension(e1.unit) == Measurements.Unit.dimension(e2.unit) ->
+    with {^e1, {:ok, s1}} <- {e1, Measurements.Unit.scale(e1.unit)},
+         {^e2, {:ok, s2}} <- {e2, Measurements.Unit.scale(e2.unit)} do
+      if s1.dimension == s2.dimension do
         e1 = Measurements.Error.convert(e1, e2.unit)
         e2 = Measurements.Error.convert(e2, e1.unit)
         append(e1, e2)
-
-      true ->
+      else
         raise ArgumentError, message: "#{e1} and #{e2} have incompatible unit dimension"
+      end
     end
   end
 end

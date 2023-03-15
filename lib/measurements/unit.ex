@@ -155,16 +155,17 @@ defmodule Measurements.Unit do
   @doc """
   The dimension of the unit
   """
-  # TODO :review hte API, alwys go with a Scale...
-  @spec dimension(atom) :: {:ok, Dimension.t()} | {:error, term}
-  def dimension(nil), do: {:ok, %Dimension{}}
 
-  def dimension(unit) do
-    case Parser.parse(unit) do
-      {:ok, _scale, dimension} -> {:ok, dimension}
-      {:error, reason} -> raise RuntimeError, message: reason
-    end
-  end
+  # # TODO :review hte API, alwys go with a Scale...
+  # @spec dimension(atom) :: {:ok, Dimension.t()} | {:error, term}
+  # def dimension(nil), do: {:ok, %Dimension{}}
+
+  # def dimension(unit) do
+  #   case Parser.parse(unit) do
+  #     {:ok, _scale, dimension} -> {:ok, dimension}
+  #     {:error, reason} -> raise RuntimeError, message: reason
+  #   end
+  # end
 
   @doc """
   """
@@ -190,17 +191,14 @@ defmodule Measurements.Unit do
   end
 
   def convert(from_unit, to_unit) do
-    {:ok, target_dim} = dimension(to_unit)
-
-    case dimension(from_unit) do
-      {:ok, ^target_dim} ->
-        {:ok, from} = scale(from_unit)
-        {:ok, to} = scale(to_unit)
-        {:ok, Scale.convert(Scale.ratio(from, to))}
-
-      {:ok, _another_dim} ->
+    with {:ok, target_scale} <- scale(to_unit),
+         {:ok, origin_scale} <- scale(from_unit) do
+      if origin_scale.dimension == target_scale.dimension do
+        {:ok, Scale.convert(Scale.ratio(origin_scale, target_scale))}
+      else
         {:error, :incompatible_dimension}
-
+      end
+    else
       {:error, what} ->
         {:error, what}
     end
@@ -214,17 +212,14 @@ defmodule Measurements.Unit do
   def min(nil, nil), do: {:ok, nil}
 
   def min(u1, u2) do
-    {:ok, dim2} = dimension(u2)
-
-    case dimension(u1) do
-      {:ok, ^dim2} ->
-        {:ok, s1} = scale(u1)
-        {:ok, s2} = scale(u2)
+    with {:ok, s2} <- scale(u2),
+         {:ok, s1} <- scale(u1) do
+      if s1.dimension == s2.dimension do
         {:ok, if(s1 < s2, do: u1, else: u2)}
-
-      {:ok, _another_dim} ->
+      else
         {:error, :incompatible_dimension}
-
+      end
+    else
       {:error, what} ->
         {:error, what}
     end
@@ -238,17 +233,14 @@ defmodule Measurements.Unit do
   def max(nil, nil), do: {:ok, nil}
 
   def max(u1, u2) do
-    {:ok, dim2} = dimension(u2)
-
-    case dimension(u1) do
-      {:ok, ^dim2} ->
-        {:ok, s1} = scale(u1)
-        {:ok, s2} = scale(u2)
+    with {:ok, s2} <- scale(u2),
+         {:ok, s1} <- scale(u1) do
+      if s1.dimension == s2.dimension do
         {:ok, if(s1 >= s2, do: u1, else: u2)}
-
-      {:ok, _another_dim} ->
+      else
         {:error, :incompatible_dimension}
-
+      end
+    else
       {:error, what} ->
         {:error, what}
     end
@@ -272,32 +264,18 @@ defmodule Measurements.Unit do
   """
   @spec product(t, t) :: {:ok, (value -> value)} | {:error, String.t()}
   def product(u1, u2) do
-    with {^u1, {:ok, s1}, {:ok, d1}} <-
-           {u1, Measurements.Unit.scale(u1), Measurements.Unit.dimension(u1)},
-         {^u2, {:ok, s2}, {:ok, d2}} <-
-           {u2, Measurements.Unit.scale(u2), Measurements.Unit.dimension(u2)} do
+    with {^u1, {:ok, s1}} <- {u1, Measurements.Unit.scale(u1)},
+         {^u2, {:ok, s2}} <- {u2, Measurements.Unit.scale(u2)} do
       # |> IO.inspect()
-      prod_dim = Measurements.Unit.Dimension.sum(d1, d2)
-      # |> IO.inspect()
+
       prod_scale = Measurements.Unit.Scale.prod(s1, s2)
-      # |> IO.inspect()
-      # prod_dim_scale= Measurements.Unit.scale(prod_dim)
       # |> IO.inspect()
 
       Measurements.Unit.new(prod_scale)
     else
-      {unit, {:error, reason}, {:ok, d}} ->
+      {unit, {:error, reason_s}} ->
         raise ArgumentError,
-          message: "#{unit} has a dimension of #{d} but scale/1 gives error: #{reason}"
-
-      {unit, {:ok, s}, {:error, reason}} ->
-        raise ArgumentError,
-          message: "#{unit} has a scale of #{s} but dimension/1 gives error: #{reason}"
-
-      {unit, {:error, reason_s}, {:error, reason_d}} ->
-        raise ArgumentError,
-          message:
-            "#{unit} dimension/1 gives error: #{reason_d} and scales/1 gives error: #{reason_s}"
+          message: "#{unit} scale/1 gives error: #{reason_s}"
     end
   end
 
@@ -307,27 +285,14 @@ defmodule Measurements.Unit do
   """
   @spec ratio(t, t) :: t
   def ratio(u1, u2) do
-    with {^u1, {:ok, s1}, {:ok, d1}} <-
-           {u1, Measurements.Unit.scale(u1), Measurements.Unit.dimension(u1)},
-         {^u2, {:ok, s2}, {:ok, d2}} <-
-           {u2, Measurements.Unit.scale(u2), Measurements.Unit.dimension(u2)} do
-      Measurements.Unit.new(
-        Measurements.Unit.Scale.ratio(s1, s2),
-        Measurements.Unit.Dimension.delta(d1, d2)
-      )
+    with {^u1, {:ok, s1}} <- {u1, Measurements.Unit.scale(u1)},
+         {^u2, {:ok, s2}} <- {u2, Measurements.Unit.scale(u2)} do
+      ratio_scale = Measurements.Unit.Scale.ratio(s1, s2)
+      Measurements.Unit.new(ratio_scale)
     else
-      {unit, {:error, reason}, {:ok, d}} ->
+      {unit, {:error, reason_s}} ->
         raise ArgumentError,
-          message: "#{unit} has a dimension of #{d} but scale/1 gives error: #{reason}"
-
-      {unit, {:ok, s}, {:error, reason}} ->
-        raise ArgumentError,
-          message: "#{unit} has a scale of #{s} but dimension/1 gives error: #{reason}"
-
-      {unit, {:error, reason_s}, {:error, reason_d}} ->
-        raise ArgumentError,
-          message:
-            "#{unit} dimension/1 gives error: #{reason_d} and scales/1 gives error: #{reason_s}"
+          message: "#{unit} scales/1 gives error: #{reason_s}"
     end
   end
 end

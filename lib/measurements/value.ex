@@ -1,5 +1,6 @@
 defmodule Measurements.Value do
   alias Measurements.Unit
+  alias Measurements.Measurement
 
   @enforce_keys [:value, :unit]
   defstruct value: nil,
@@ -12,25 +13,6 @@ defmodule Measurements.Value do
           unit: Unit.t(),
           error: non_neg_integer
         }
-
-  defmodule Behaviour do
-    @type value :: integer | float
-    @type error :: non_neg_integer | float
-    @type unit :: Measurements.Unit.t()
-
-    @callback value(Measurements.Value.t()) :: value
-    @callback error(Measurements.Value.t()) :: error
-    @callback unit(Measurements.Value.t()) :: unit
-  end
-
-  @behaviour Behaviour
-
-  @impl Behaviour
-  def value(%__MODULE__{} = v), do: v.value
-  @impl Behaviour
-  def error(%__MODULE__{} = v), do: v.error
-  @impl Behaviour
-  def unit(%__MODULE__{} = v), do: v.unit
 
   # Unneeded ??
   # @behaviour Access
@@ -119,40 +101,7 @@ defmodule Measurements.Value do
     end
   end
 
-  @doc """
-  Convert the measurement to the new unit, if the new unit is more precise.
-
-  This will pick the most precise between the measurement's unit and the new unit.
-  Then it will convert the measurement to the chosen unit.
-
-  If no conversion is possible, the original measurement is returned.
-
-  ## Examples
-
-      iex> Measurements.Value.new(42, :second) |> Measurements.Value.add_error(1, :second) |> Measurements.Value.convert(:millisecond)
-      %Measurements.Value{value: 42_000, unit: :millisecond, error: 1_000}
-
-      iex> Measurements.Value.new(42, :millisecond) |> Measurements.Value.add_error(1, :millisecond) |> Measurements.Value.convert(:second)
-      %Measurements.Value{value: 42, unit: :millisecond, error: 1}
-
-  """
-  @spec convert(t, Unit.t()) :: t
-
-  def convert(%__MODULE__{unit: u} = m, unit) when u == unit, do: m
-
-  def convert(%__MODULE__{} = m, unit) do
-    case Unit.min(m.unit, unit) do
-      {:ok, min_unit} ->
-        # if Unit.min is successful, conversion will always work.
-        convert(m, min_unit, :force)
-
-      # no conversion possible, just ignore it
-      {:error, :incompatible_dimension} ->
-        m
-    end
-  end
-
-  def convert(%__MODULE__{} = m, unit, :force) do
+  def convert(%Measurements.Value{} = m, unit, :force) do
     case Unit.convert(m.unit, unit) do
       {:ok, converter} ->
         new(
@@ -194,14 +143,37 @@ defmodule Measurements.Value do
   end
 
   def sum(%__MODULE__{} = v1, %__MODULE__{} = v2) do
-    cond do
-      Unit.dimension(v1.unit) == Unit.dimension(v2.unit) ->
-        v1 = convert(v1, v2.unit)
-        v2 = convert(v2, v1.unit)
+    with {:ok, s1} <- Unit.scale(v1.unit),
+         {:ok, s2} <- Unit.scale(v2.unit) do
+      if s1.dimension == s2.dimension do
+        v1 = Measurement.convert(v1, v2.unit)
+        v2 = Measurement.convert(v2, v1.unit)
         sum(v1, v2)
-
-      true ->
+      else
         raise ArgumentError, message: "#{v1} and #{v2} have incompatible unit dimension"
+      end
+    end
+  end
+
+  def delta(%__MODULE__{} = v1, %__MODULE__{} = v2)
+      when v1.unit == v2.unit do
+    new(
+      v1.value - v2.value,
+      v1.unit,
+      v1.error + v2.error
+    )
+  end
+
+  def delta(%__MODULE__{} = v1, %__MODULE__{} = v2) do
+    with {:ok, s1} <- Unit.scale(v1.unit),
+         {:ok, s2} <- Unit.scale(v2.unit) do
+      if s1.dimension == s2.dimension do
+        m1 = Measurement.convert(v1, v2.unit)
+        m2 = Measurement.convert(v2, v1.unit)
+        delta(m1, m2)
+      else
+        raise ArgumentError, message: "#{v1} and #{v2} have incompatible unit dimension"
+      end
     end
   end
 
@@ -223,6 +195,75 @@ defmodule Measurements.Value do
   """
   def scale(%__MODULE__{} = e, n) when is_integer(n) do
     new(e.value * n, e.unit, abs(e.error * n))
+  end
+
+  def ratio(%__MODULE__{} = v1, %__MODULE__{} = v2)
+      when v1.unit == v2.unit do
+    v1_rel_err = v1.error / v1.value
+    v2_rel_err = v2.error / v2.value
+
+    value =
+      if rem(v1.value, v2.value) == 0,
+        do: div(v1.value, v2.value),
+        else: v1.value / v2.value
+
+    error = abs(value * (v1_rel_err + v2_rel_err))
+
+    new(value, nil, error)
+  end
+
+  def ratio(%__MODULE__{} = v1, %__MODULE__{} = v2) do
+    with {:ok, s1} <- Unit.scale(v1.unit),
+         {:ok, s2} <- Unit.scale(v2.unit) do
+      if s1.dimension == s2.dimension do
+        m1 = Measurement.convert(v1, v2.unit)
+        m2 = Measurement.convert(v2, v1.unit)
+        ratio(m1, m2)
+      else
+        raise ArgumentError, message: "#{v1} and #{v2} have incompatible unit dimension"
+      end
+    end
+  end
+end
+
+defimpl Measurements.Measurement, for: Measurements.Value do
+  def value(%Measurements.Value{} = v), do: v.value
+
+  def error(%Measurements.Value{} = v), do: v.error
+
+  def unit(%Measurements.Value{} = v), do: v.unit
+
+  @doc """
+  Convert the measurement to the new unit, if the new unit is more precise.
+
+  This will pick the most precise between the measurement's unit and the new unit.
+  Then it will convert the measurement to the chosen unit.
+
+  If no conversion is possible, the original measurement is returned.
+
+  ## Examples
+
+      iex> Measurements.Value.new(42, :second) |> Measurements.Value.add_error(1, :second) |> Measurements.Value.convert(:millisecond)
+      %Measurements.Value{value: 42_000, unit: :millisecond, error: 1_000}
+
+      iex> Measurements.Value.new(42, :millisecond) |> Measurements.Value.add_error(1, :millisecond) |> Measurements.Value.convert(:second)
+      %Measurements.Value{value: 42, unit: :millisecond, error: 1}
+
+  """
+  @spec convert(Measurements.Value.t(), Measurements.Unit.t()) :: Measurements.Value.t()
+
+  def convert(%Measurements.Value{unit: u} = m, unit) when u == unit, do: m
+
+  def convert(%Measurements.Value{} = m, unit) do
+    case Measurements.Unit.min(m.unit, unit) do
+      {:ok, min_unit} ->
+        # if Unit.min is successful, conversion will always work.
+        Measurements.Value.convert(m, min_unit, :force)
+
+      # no conversion possible, just ignore it
+      {:error, :incompatible_dimension} ->
+        m
+    end
   end
 end
 

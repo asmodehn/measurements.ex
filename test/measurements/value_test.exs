@@ -3,6 +3,7 @@ defmodule Measurements.ValueTest do
   doctest Measurements.Value
 
   alias Measurements.Value
+  alias Measurements.Measurement
 
   describe "new/2" do
     test "build any type of measurement" do
@@ -46,32 +47,6 @@ defmodule Measurements.ValueTest do
                value: 51_000,
                unit: :microsecond,
                error: 33
-             }
-    end
-  end
-
-  describe "convert/2" do
-    test "converts if the unit precision is greater than current one" do
-      assert Value.new(42, :millisecond)
-             |> Value.convert(:microsecond) == %Value{
-               value: 42_000,
-               unit: :microsecond
-             }
-    end
-
-    test "doesnt do anything if precision is less than current one" do
-      assert Value.new(42, :millisecond)
-             |> Value.convert(:second) == %Value{
-               value: 42,
-               unit: :millisecond
-             }
-    end
-
-    test "ignored if unit dimension is incompatible" do
-      assert Value.new(42, :millisecond)
-             |> Value.convert(:meter) == %Value{
-               value: 42,
-               unit: :millisecond
              }
     end
   end
@@ -175,6 +150,32 @@ defmodule Measurements.ValueTest do
   #     assert Value.pop(v, :unit) == {:millisecond, %Value{value: 51, unit: nil, error: 33}}
   #   end
   # end
+
+  describe "Measurement protocol: " do
+    test "convert/2 converts if the unit precision is greater than current one" do
+      assert Value.new(42, :millisecond)
+             |> Measurement.convert(:microsecond) == %Value{
+               value: 42_000,
+               unit: :microsecond
+             }
+    end
+
+    test "convert/2 doesnt do anything if precision is less than current one" do
+      assert Value.new(42, :millisecond)
+             |> Measurement.convert(:second) == %Value{
+               value: 42,
+               unit: :millisecond
+             }
+    end
+
+    test "convert/2 ignored if unit dimension is incompatible" do
+      assert Value.new(42, :millisecond)
+             |> Measurement.convert(:meter) == %Value{
+               value: 42,
+               unit: :millisecond
+             }
+    end
+  end
 
   describe "String.Chars protocol" do
     # TODO
