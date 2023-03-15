@@ -101,30 +101,7 @@ defmodule Measurements do
 
   """
 
-  def sum(%module{} = m1, %module{} = m2), do: module.sum(m1, m2)
-
-  def sum(m1, m2) do
-    cond do
-      Measurement.unit(m1) == Measurement.unit(m2) ->
-        Value.new(
-          Measurement.value(m1) + Measurement.value(m2),
-          Measurement.unit(m1),
-          Measurement.error(m1) + Measurement.error(m2)
-        )
-
-      true ->
-        with {:ok, s1} <- Unit.scale(m1.unit),
-             {:ok, s2} <- Unit.scale(m2.unit) do
-          if s1.dimension == s2.dimension do
-            m1 = Measurement.convert(m1, Measurement.unit(m2))
-            m2 = Measurement.convert(m2, Measurement.unit(m1))
-            sum(m1, m2)
-          else
-            raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
-          end
-        end
-    end
-  end
+  def sum(%module{} = m1, m2), do: module.sum(m1, m2)
 
   @doc """
   Scales a measurement by a number.
@@ -143,9 +120,7 @@ defmodule Measurements do
         }
 
   """
-  def scale(m1, n) when is_integer(n) do
-    Value.new(Measurement.value(m1) * n, Measurement.unit(m1), abs(Measurement.error(m1) * n))
-  end
+  def scale(%module{} = m, n), do: module.scale(m, n)
 
   @doc """
   The difference of two measurements, with implicit unit conversion.
@@ -166,30 +141,7 @@ defmodule Measurements do
 
   """
 
-  def delta(%module{} = m1, %module{} = m2), do: module.delta(m1, m2)
-
-  def delta(m1, m2) do
-    cond do
-      Measurement.unit(m1) == Measurement.unit(m2) ->
-        Value.new(
-          Measurement.value(m1) - Measurement.value(m2),
-          Measurement.unit(m1),
-          Measurement.error(m1) + Measurement.error(m2)
-        )
-
-      true ->
-        with {:ok, s1} <- Unit.scale(Measurement.unit(m1)),
-             {:ok, s2} <- Unit.scale(Measurement.unit(m2)) do
-          if s1.dimension == s2.dimension do
-            m1 = Measurement.convert(m1, Measurement.unit(m2))
-            m2 = Measurement.convert(m2, Measurement.unit(m1))
-            delta(m1, m2)
-          else
-            raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
-          end
-        end
-    end
-  end
+  def delta(%module{} = m1, m2), do: module.delta(m1, m2)
 
   @doc """
   The ratio of two measurements, with implicit unit conversion.
@@ -209,41 +161,7 @@ defmodule Measurements do
       }
 
   """
-  def ratio(%module{} = m1, %module{} = m2), do: module.ratio(m1, m2)
-
-  def ratio(m1, m2) do
-    cond do
-      Measurement.unit(m1) == Measurement.unit(m2) ->
-        # note: relative error is computed as float temporarily (quotient is supposed to always be small)
-        # For error we rely on float precision. Other approximations are already made in Error propagation theory anyway.
-        m1_rel_err = Measurement.error(m1) / Measurement.value(m1)
-        m2_rel_err = Measurement.error(m2) / Measurement.value(m2)
-
-        value =
-          if rem(Measurement.value(m1), Measurement.value(m2)) == 0,
-            do: div(Measurement.value(m1), Measurement.value(m2)),
-            else: Measurement.value(m1) / Measurement.value(m2)
-
-        error = abs(value * (m1_rel_err + m2_rel_err))
-
-        # TODO : unit conversion via ratio...
-        # TODO : maybe unit is still there, but only with a scale ??
-        # TMP: force to scale 0 if unit is nil -> constant
-        Value.new(value, nil, error)
-
-      true ->
-        with {:ok, s1} <- Unit.scale(Measurement.unit(m1)),
-             {:ok, s2} <- Unit.scale(Measurement.unit(m2)) do
-          if s1.dimension == s2.dimension do
-            m1 = Measurement.convert(m1, Measurement.unit(m2))
-            m2 = Measurement.convert(m2, Measurement.unit(m1))
-            ratio(m1, m2)
-          else
-            raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
-          end
-        end
-    end
-  end
+  def ratio(%module{} = m1, m2), do: module.ratio(m1, m2)
 
   # TODO : ratio of different units, with adjustment of dimension
   # TODO : product with increase of dimension

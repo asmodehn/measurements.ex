@@ -99,17 +99,21 @@ defmodule MeasurementsTest do
 
       System.OriginalMock
       |> expect(:monotonic_time, fn :millisecond -> 51 end)
-      |> expect(:time_offset, fn :millisecond -> 4 end)
+      |> expect(:time_offset, fn :millisecond -> 5 end)
 
       Node.OriginalMock
       |> expect(:self, fn -> :nonode@A end)
 
       s2 = Timestamp.now(:millisecond)
 
-      assert Measurements.sum(s2, s1) == %Value{
+      assert Measurements.sum(s2, s1) == %Timestamp{
+               node: :nonode@A,
                unit: :millisecond,
-               value: 42 + 3 + 51 + 4,
-               error: 0
+               monotonic: 42 + 51,
+               # the average of offsets
+               vm_offset: 4,
+               # the delta of offsets
+               error: 2
              }
     end
 

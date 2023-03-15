@@ -9,8 +9,6 @@ defmodule Measurements.TimestampTest do
   alias Measurements.System
   alias Measurements.Node
 
-  alias Measurements.Value
-
   describe "now/1" do
     test "creates a local timestamp with monotonic time and vm offset" do
       System.OriginalMock
@@ -161,7 +159,7 @@ defmodule Measurements.TimestampTest do
   end
 
   describe "sum/2" do
-    test "sum two timestamps of same origin as a time value" do
+    test "sum two timestamps of same origin as a timestamp with error" do
       System.OriginalMock
       |> expect(:monotonic_time, fn :millisecond -> 42 end)
       |> expect(:time_offset, fn :millisecond -> 3 end)
@@ -173,17 +171,21 @@ defmodule Measurements.TimestampTest do
 
       System.OriginalMock
       |> expect(:monotonic_time, fn :millisecond -> 51 end)
-      |> expect(:time_offset, fn :millisecond -> 4 end)
+      |> expect(:time_offset, fn :millisecond -> 5 end)
 
       Node.OriginalMock
       |> expect(:self, fn -> :nonode@A end)
 
       s2 = Timestamp.now(:millisecond)
 
-      assert Timestamp.sum(s2, s1) == %Value{
+      assert Timestamp.sum(s2, s1) == %Timestamp{
+               node: :nonode@A,
                unit: :millisecond,
-               value: 42 + 3 + 51 + 4,
-               error: 0
+               monotonic: 42 + 51,
+               # offset is the average of both offsets
+               vm_offset: 4,
+               # error is previous error (0) + the difference in offset
+               error: 2
              }
     end
   end
