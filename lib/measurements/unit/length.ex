@@ -5,6 +5,7 @@ defmodule Measurements.Unit.Length do
 
   alias Measurements.Unit.Dimension
   alias Measurements.Unit.Scale
+  alias Measurements.Unit.Parser
 
   alias Measurements.Unit.Dimensionable
   alias Measurements.Unit.Scalable
@@ -46,15 +47,13 @@ defmodule Measurements.Unit.Length do
   @impl Dimensionable
   # no special dimension if no unit. useful to break loop cleanly when alias not found.
   def dimension(nil), do: Dimension.new()
-  def dimension(kilometer()), do: Dimension.new() |> Dimension.with_length(1)
-  def dimension(meter()), do: Dimension.new() |> Dimension.with_length(1)
-  def dimension(millimeter()), do: Dimension.new() |> Dimension.with_length(1)
-  def dimension(micrometer()), do: Dimension.new() |> Dimension.with_length(1)
-  def dimension(nanometer()), do: Dimension.new() |> Dimension.with_length(1)
-  def dimension(unit) when is_atom(unit), do: dimension(__alias(unit))
 
-  def dimension(ps) when is_integer(ps) and ps > 0,
-    do: Dimension.new() |> Dimension.with_length(1)
+  def dimension(unit) when is_atom(unit) do
+    case Parser.parse(unit) do
+      {:ok, _scale, dimension} -> dimension
+      {:error, reason} -> raise ArgumentError, reason
+    end
+  end
 
   def dimension(other), do: raise(ArgumentError, message: argument_error_message(other))
 
@@ -65,77 +64,107 @@ defmodule Measurements.Unit.Length do
   @impl Scalable
   # no special dimension if no unit. useful to break loop cleanly when alias not found.
   def scale(nil), do: Scale.new(0)
-  def scale(kilometer()), do: Scale.new(3)
-  def scale(meter()), do: Scale.new(0)
-  def scale(millimeter()), do: Scale.new(-3)
-  def scale(micrometer()), do: Scale.new(-6)
-  def scale(nanometer()), do: Scale.new(-9)
-  def scale(unit) when is_atom(unit), do: scale(__alias(unit))
+
+  # Note now we directly invoke parser. we dont care about aliases and if unit is present or not to retrieve its scale
+  def scale(unit) when is_atom(unit) do
+    case Parser.parse(unit) do
+      {:ok, scale, _dimension} -> scale
+      {:error, reason} -> raise ArgumentError, reason
+    end
+  end
 
   def scale(other), do: raise(ArgumentError, message: argument_error_message(other))
 
   @behaviour Unitable
   @impl Unitable
   @spec unit(Scale.t(), Dimension.t()) :: {:ok, atom} | {:error, fun, atom}
-  def unit(%Scale{coefficient: 1} = s, %Dimension{
-        time: 0,
-        length: 1,
-        mass: 0,
-        current: 0,
-        temperature: 0,
-        substance: 0,
-        lintensity: 0
-      }) do
-    with {:dimension, {:ok, unit}} <- {:dimension, {:ok, "meter"}},
-         {:scale, {:ok, prefixed_unit}} <- {:scale, with_scale(unit, s)} do
-      {:ok, prefixed_unit}
-    else
-      {:scale, {:error, convert, prefixed_unit}} ->
-        {:error, convert, prefixed_unit}
-    end
-  end
+  def unit(
+        %Scale{
+          coefficient: 1,
+          dimension: %Dimension{
+            time: 0,
+            length: l,
+            mass: 0,
+            current: 0,
+            temperature: 0,
+            substance: 0,
+            lintensity: 0
+          }
+        } = s,
+        convert_mag_acc \\ 0
+      ) do
+    # |> IO.inspect()
+    {unit_atom, scale} = Parser.to_unit(s)
 
-  @spec with_scale(String.t(), Scale.t(), integer) :: {:ok, atom} | {:error, (term -> term), atom}
-  def with_scale(unit, %Scale{magnitude: m} = s, convert_mag_acc \\ 0) do
-    try do
-      case Scale.prefix(s) do
-        {:ok, prefix} ->
-          if convert_mag_acc == 0 do
-            {:ok, String.to_existing_atom(prefix <> unit)}
-          else
-            {:error, Scale.convert(Scale.new(convert_mag_acc)),
-             String.to_existing_atom(prefix <> unit)}
-          end
+    cond do
+      # TODO Notice how error is not really an error, just a sign that conversion to apply is not identity.
+      # => simplify API and logic ?? 
+      scale == %Scale{} and convert_mag_acc == 0 and unit_atom in __units() ->
+        {:ok, unit_atom}
 
-        {:error, convert, prefix} ->
-          # composing with already existing convert function
-          if convert_mag_acc == 0 do
-            {:error, convert, String.to_existing_atom(prefix <> unit)}
-          else
-            {:error, fn v -> Scale.convert(Scale.new(convert_mag_acc)).(convert.(v)) end,
-             String.to_existing_atom(prefix <> unit)}
-          end
-      end
-    rescue
-      ae in ArgumentError ->
-        # converge towards 0 
-        cond do
-          m > 0 -> with_scale(unit, %{s | magnitude: m - 3}, convert_mag_acc + 3)
-          m < 0 -> with_scale(unit, %{s | magnitude: m + 3}, convert_mag_acc - 3)
-          true -> reraise ae, __STACKTRACE__
-        end
+      # if scale is not exactly 1
+      convert_mag_acc == 0 and unit_atom in __units() ->
+        {:error, Scale.convert(scale), unit_atom}
+
+      # if convert_mag_acc has something we need to integrate with the current scale
+      unit_atom in __units() ->
+        {:error, Scale.convert(Scale.prod(scale, Scale.new(convert_mag_acc))), unit_atom}
+
+      # recurse on magnitude towards 0 if the normalized unit is not recognised.
+      # Note we reuse s and ignore previous parsing.
+      s.magnitude > 0 ->
+        unit(%{s | magnitude: s.magnitude - 1}, convert_mag_acc + 1)
+
+      s.magnitude < 0 ->
+        unit(%{s | magnitude: s.magnitude + 1}, convert_mag_acc - 1)
+
+      # otherwise ignore parser result, use meter and dont forget accumulated convert scale
+      l > 0 ->
+        {:error, Scale.convert(Scale.prod(s, Scale.new(convert_mag_acc))), :meter}
+
+      true ->
+        {:error, Scale.convert(Scale.prod(s, Scale.new(convert_mag_acc))),
+         String.to_atom("meter_#{l}")}
+
+        # TODO : double check this always true ? should crash instead ?
     end
   end
 
   @spec to_string(atom) :: String.t()
+  def to_string(kilometer()), do: "km"
+  def to_string(meter()), do: "m"
+  def to_string(millimeter()), do: "mm"
+  def to_string(micrometer()), do: "μm"
+  def to_string(nanometer()), do: "nm"
+
   def to_string(unit) when is_atom(unit) do
-    case unit do
-      kilometer() -> "km"
-      meter() -> "m"
-      millimeter() -> "mm"
-      micrometer() -> "μm"
-      nanometer() -> "nm"
-    end
+    {:ok, %Scale{coefficient: 1} = scale, _dim} = Parser.parse(unit)
+
+    dim =
+      cond do
+        scale.dimension.length > 1 -> "s**#{scale.dimension.length}"
+        scale.dimension.length == 1 -> "s"
+        scale.dimension.length < 0 -> "s#{scale.dimension.length}"
+      end
+
+    scale_prefix =
+      cond do
+        scale.magnitude >= 18 * scale.dimension.length -> "exa"
+        scale.magnitude >= 15 * scale.dimension.length -> "peta"
+        scale.magnitude >= 12 * scale.dimension.length -> "tera"
+        scale.magnitude >= 9 * scale.dimension.length -> "giga"
+        scale.magnitude >= 6 * scale.dimension.length -> "M"
+        scale.magnitude >= 3 * scale.dimension.length -> "k"
+        scale.magnitude >= 0 * scale.dimension.length -> ""
+        scale.magnitude >= -3 * scale.dimension.length -> "m"
+        scale.magnitude >= -6 * scale.dimension.length -> "μ"
+        scale.magnitude >= -9 * scale.dimension.length -> "n"
+        scale.magnitude >= -12 * scale.dimension.length -> "p"
+        scale.magnitude >= -15 * scale.dimension.length -> "f"
+        true -> "a"
+      end
+
+    scale_prefix <> dim
   end
 
   defp argument_error_message(other),

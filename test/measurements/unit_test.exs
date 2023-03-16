@@ -8,6 +8,7 @@ defmodule Measurements.UnitTest do
   alias Measurements.Unit.Length
 
   describe "time/1 normalizes a unit if it represents time" do
+    @tag :thisone
     test "second, millisecond, microsecond, nanosecond" do
       assert Unit.time(:second) == {:ok, :second}
       assert Unit.time(:millisecond) == {:ok, :millisecond}
@@ -15,7 +16,7 @@ defmodule Measurements.UnitTest do
       assert Unit.time(:nanosecond) == {:ok, :nanosecond}
     end
 
-    test "supports aliases" do
+    test "supports plural form" do
       assert Unit.time(:seconds) == {:ok, :second}
       assert Unit.time(:milliseconds) == {:ok, :millisecond}
       assert Unit.time(:microseconds) == {:ok, :microsecond}
@@ -32,7 +33,7 @@ defmodule Measurements.UnitTest do
       assert Unit.length(:nanometer) == {:ok, :nanometer}
     end
 
-    test "support aliases" do
+    test "support plural form" do
       assert Unit.length(:kilometers) == {:ok, :kilometer}
       assert Unit.length(:meters) == {:ok, :meter}
       assert Unit.length(:millimeters) == {:ok, :millimeter}
@@ -62,7 +63,7 @@ defmodule Measurements.UnitTest do
       assert Unit.new(nil) == {:ok, nil}
     end
 
-    test "supports aliases" do
+    test "supports plural form" do
       assert Unit.new(:micrometers) == {:ok, :micrometer}
       assert Unit.new(:milliseconds) == {:ok, :millisecond}
     end
@@ -139,6 +140,7 @@ defmodule Measurements.UnitTest do
       assert Unit.product(:second, :second) == {:ok, :second_2}
     end
 
+    @tag :product
     test "multiplies related unit with different scales, converting where needed" do
       {:error, convert_value, :millisecond_2} = Unit.product(:second, :millisecond)
 

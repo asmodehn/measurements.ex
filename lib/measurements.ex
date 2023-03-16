@@ -22,6 +22,7 @@ defmodule Measurements do
 
   alias Measurements.Unit
   alias Measurements.Value
+  alias Measurements.Measurement
 
   @doc """
   Time Measurement.
@@ -79,6 +80,8 @@ defmodule Measurements do
     end
   end
 
+  defdelegate convert(m, unit), to: Measurement
+
   @doc """
   The sum of multiple measurements, with implicit unit conversion.
 
@@ -98,26 +101,7 @@ defmodule Measurements do
 
   """
 
-  def sum(%module{} = m1, %module{} = m2), do: module.sum(m1, m2)
-
-  def sum(%impl1{} = m1, %impl2{} = m2) do
-    cond do
-      impl1.unit(m1) == impl2.unit(m2) ->
-        Value.new(
-          impl1.value(m1) + impl2.value(m2),
-          impl1.unit(m1),
-          impl1.error(m1) + impl2.error(m2)
-        )
-
-      Unit.dimension(impl1.unit(m1)) == Unit.dimension(impl2.unit(m2)) ->
-        m1 = impl1.convert(m1, impl2.unit(m2))
-        m2 = impl2.convert(m2, impl1.unit(m1))
-        sum(m1, m2)
-
-      true ->
-        raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
-    end
-  end
+  def sum(%module{} = m1, m2), do: module.sum(m1, m2)
 
   @doc """
   Scales a measurement by a number.
@@ -136,9 +120,7 @@ defmodule Measurements do
         }
 
   """
-  def scale(m1, n) when is_integer(n) do
-    Value.new(m1[:value] * n, m1[:unit], abs(m1.error * n))
-  end
+  def scale(%module{} = m, n), do: module.scale(m, n)
 
   @doc """
   The difference of two measurements, with implicit unit conversion.
@@ -158,20 +140,8 @@ defmodule Measurements do
       }
 
   """
-  def delta(m1, m2) do
-    cond do
-      m1[:unit] == m2[:unit] ->
-        Value.new(m1[:value] - m2[:value], m1[:unit], m1[:error] + m2[:error])
 
-      Unit.dimension(m1[:unit]) == Unit.dimension(m2[:unit]) ->
-        m1 = Value.convert(m1, m2[:unit])
-        m2 = Value.convert(m2, m1[:unit])
-        delta(m1, m2)
-
-      true ->
-        raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
-    end
-  end
+  def delta(%module{} = m1, m2), do: module.delta(m1, m2)
 
   @doc """
   The ratio of two measurements, with implicit unit conversion.
@@ -191,35 +161,7 @@ defmodule Measurements do
       }
 
   """
-  def ratio(m1, m2) do
-    cond do
-      m1[:unit] == m2[:unit] ->
-        # note: relative error is computed as float temporarily (quotient is supposed to always be small)
-        # For error we rely on float precision. Other approximations are already made in Error propagation theory anyway.
-        m1_rel_err = m1[:error] / m1[:value]
-        m2_rel_err = m2[:error] / m2[:value]
-
-        value =
-          if rem(m1[:value], m2[:value]) == 0,
-            do: div(m1[:value], m2[:value]),
-            else: m1[:value] / m2[:value]
-
-        error = abs(value * (m1_rel_err + m2_rel_err))
-
-        # TODO : unit conversion via ratio...
-        # TODO : maybe unit is still there, but only with a scale ??
-        # TMP: force to scale 0 if unit is nil -> constant
-        Value.new(value, nil, error)
-
-      Unit.dimension(m1[:unit]) == Unit.dimension(m2[:unit]) ->
-        m1 = Value.convert(m1, m2[:unit])
-        m2 = Value.convert(m2, m1[:unit])
-        ratio(m1, m2)
-
-      true ->
-        raise ArgumentError, message: "#{m1} and #{m2} have incompatible unit dimension"
-    end
-  end
+  def ratio(%module{} = m1, m2), do: module.ratio(m1, m2)
 
   # TODO : ratio of different units, with adjustment of dimension
   # TODO : product with increase of dimension

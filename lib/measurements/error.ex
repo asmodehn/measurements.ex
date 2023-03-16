@@ -175,6 +175,12 @@ defimpl TypeClass.Property.Generator, for: Measurements.Error do
       )
 end
 
+# defimpl TypeClass.Property.Equal, for: Measurements.Error do
+#   def equal?(a, b)
+#     equal?(a.error, b.error) and equal?(a.unit, b.unit)
+#   end
+# end
+
 definst Witchcraft.Semigroup, for: Measurements.Error do
   require Measurements.Unit.Time
   require Measurements.Unit.Length
@@ -191,6 +197,7 @@ definst Witchcraft.Semigroup, for: Measurements.Error do
 
   def append(%Measurements.Error{} = e1, %Measurements.Error{} = e2)
       when e1.unit == e2.unit do
+    # IO.inspect("#{e1} + #{e2} -> ")
     %Measurements.Error{
       error: e1.error + e2.error,
       unit: e1.unit
@@ -198,14 +205,15 @@ definst Witchcraft.Semigroup, for: Measurements.Error do
   end
 
   def append(%Measurements.Error{} = e1, %Measurements.Error{} = e2) do
-    cond do
-      Measurements.Unit.dimension(e1.unit) == Measurements.Unit.dimension(e2.unit) ->
+    with {^e1, {:ok, s1}} <- {e1, Measurements.Unit.scale(e1.unit)},
+         {^e2, {:ok, s2}} <- {e2, Measurements.Unit.scale(e2.unit)} do
+      if s1.dimension == s2.dimension do
         e1 = Measurements.Error.convert(e1, e2.unit)
         e2 = Measurements.Error.convert(e2, e1.unit)
         append(e1, e2)
-
-      true ->
+      else
         raise ArgumentError, message: "#{e1} and #{e2} have incompatible unit dimension"
+      end
     end
   end
 end

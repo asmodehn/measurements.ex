@@ -8,6 +8,7 @@ defmodule Measurements.Timestamp do
 
   alias Measurements.Unit
   alias Measurements.Value
+  alias Measurements.Measurement
 
   @enforce_keys [:node, :monotonic, :unit, :vm_offset]
   defstruct node: nil,
@@ -70,7 +71,7 @@ defmodule Measurements.Timestamp do
   @doc """
    Compute the time elapsed between two timestamps.
    CAREFUL : IF both measurements occured on the same node, this is using only monotonic_time.
-   Otherwise vm_offset is taken into account.
+   Otherwise it is like any other measurement value, and therefore vm_offset is taken into account.
   """
   def delta(%__MODULE__{} = lts, %__MODULE__{} = previous_lts)
       when lts.node == previous_lts.node and lts.unit == previous_lts.unit do
@@ -81,20 +82,37 @@ defmodule Measurements.Timestamp do
   end
 
   def delta(%__MODULE__{} = lts, %__MODULE__{} = previous_lts)
-      when lts.unit == previous_lts.unit do
-    Measurements.time(
-      lts.monotonic + lts.vm_offset - previous_lts.monotonic - previous_lts.vm_offset,
-      lts.unit
-    )
-  end
-
-  def delta(%__MODULE__{} = lts, %__MODULE__{} = previous_lts) do
+      when lts.node == previous_lts.node do
     if System.convert_time_unit(1, lts.unit, previous_lts.unit) == 0 do
       # lts.unit is most precise
-      delta(lts, convert(previous_lts, lts.unit))
+      delta(lts, Measurement.convert(previous_lts, lts.unit))
     else
       # previous_lts.unit is most precise
-      delta(convert(lts, previous_lts.unit), lts)
+      delta(Measurement.convert(lts, previous_lts.unit), lts)
+    end
+  end
+
+  def delta(%__MODULE__{} = v1, m) do
+    # Note:adding something that is not a timestamp produce a usual value.
+    cond do
+      v1.unit == Measurement.unit(m) ->
+        Value.new(
+          Measurement.value(v1) - Measurement.value(m),
+          v1.unit,
+          v1.error + Measurement.error(m)
+        )
+
+      true ->
+        with {:ok, s1} <- Unit.scale(v1.unit),
+             {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
+          if s1.dimension == s2.dimension do
+            m1 = Measurement.convert(v1, Measurement.unit(m))
+            m2 = Measurement.convert(m, v1.unit)
+            delta(m1, m2)
+          else
+            raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
+          end
+        end
     end
   end
 
@@ -158,7 +176,7 @@ defmodule Measurements.Timestamp do
   end
 
   # Covering common behaviour with Value
-  def convert(%__MODULE__{} = m, unit, :force), do: convert(m, unit, :system)
+  # def convert(%__MODULE__{} = m, unit, :force), do: convert(m, unit, :system)
   # {:ok, converter} = Unit.convert(m.unit, unit)
   #   %__MODULE__{
   #         node: m.node,
@@ -189,48 +207,6 @@ defmodule Measurements.Timestamp do
     end
   end
 
-  @behaviour Value.Behaviour
-  # TODO : protocol instead ??
-  @impl Value.Behaviour
-  def value(%__MODULE__{} = ts), do: system_time(ts).value
-  @impl Value.Behaviour
-  def error(%__MODULE__{} = ts), do: ts.error
-  @impl Value.Behaviour
-  def unit(%__MODULE__{} = ts), do: ts.unit
-
-  @doc """
-  Convert the measurement to the new unit, if the new unit is more precise.
-
-  This will pick the most precise between the measurement's unit and the new unit.
-  Then it will convert the measurement to the chosen unit.
-
-  If no conversion is possible, the original measurement is returned.
-
-  ## Examples
-      #TODO : with timestamp now and mocks !
-      # iex> Measurements.Timestamp.new(42, :second) |> Measurements.Timestamp.convert(:millisecond)
-      # %Measurements.Timestamp{value: 42_000, unit: :millisecond, error: 1_000}
-
-      # iex> Measurements.Timestamp.new(42, :millisecond) |> Measurements.Timestamp.convert(:second)
-      # %Measurements.Timestamp{value: 42, unit: :millisecond, error: 1}
-
-  """
-  @spec convert(t, Unit.t()) :: t
-
-  def convert(%__MODULE__{unit: u} = m, unit) when u == unit, do: m
-
-  def convert(%__MODULE__{} = m, unit) do
-    case Unit.min(m.unit, unit) do
-      {:ok, min_unit} ->
-        # if Unit.min is successful, conversion will always work.
-        convert(m, min_unit, :force)
-
-      # no conversion possible, just ignore it
-      {:error, :incompatible_dimension} ->
-        raise ArgumentError, message: "#{unit} dimension is not compatible with #{m.unit}"
-    end
-  end
-
   @doc """
   The sum of multiple measurements, with implicit unit conversion.
 
@@ -249,7 +225,98 @@ defmodule Measurements.Timestamp do
       }
 
   """
-  def sum(%__MODULE__{} = v1, %__MODULE__{} = v2), do: Value.sum(system_time(v1), system_time(v2))
+
+  def sum(%__MODULE__{} = v1, %__MODULE__{} = v2)
+      when v1.node == v2.node and v1.unit == v2.unit do
+    %__MODULE__{
+      node: v1.node,
+      monotonic: v1.monotonic + v2.monotonic,
+      unit: v1.unit,
+      # averaging the offset for the sum
+      vm_offset: div(v1.vm_offset + v2.vm_offset, 2),
+      # adding offset difference as potential error
+      error: v1.error + v2.error + abs(v1.vm_offset - v2.vm_offset)
+    }
+  end
+
+  def sum(%__MODULE__{} = lts1, %__MODULE__{} = lts2) when lts1.node == lts2.node do
+    if System.convert_time_unit(1, lts1.unit, lts2.unit) == 0 do
+      # lts1.unit is most precise
+      sum(lts1, Measurement.convert(lts2, lts1.unit))
+    else
+      # lts2.unit is most precise
+      sum(Measurement.convert(lts1, lts2.unit), lts1)
+    end
+  end
+
+  # Note: sum between two timestmap is possible only if measurements comes from the same node
+
+  def sum(%__MODULE__{} = v1, m) do
+    cond do
+      v1.unit == Measurement.unit(m) ->
+        # Note:adding something that is not a timstamp produce a usual value.
+        Value.new(
+          Measurement.value(v1) + Measurement.value(m),
+          v1.unit,
+          v1.error + Measurement.error(m)
+        )
+
+      true ->
+        with {:ok, s1} <- Unit.scale(v1.unit),
+             {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
+          if s1.dimension == s2.dimension do
+            v1 = Measurement.convert(v1, Measurement.unit(m))
+            m = Measurement.convert(m, v1.unit)
+            sum(v1, m)
+          else
+            raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
+          end
+        end
+    end
+  end
+
+  # Note: scale and ratio are intentionally not supported by local timestamps.
+end
+
+defimpl Measurements.Measurement, for: Measurements.Timestamp do
+  def value(%Measurements.Timestamp{} = ts), do: Measurements.Timestamp.system_time(ts).value
+
+  def error(%Measurements.Timestamp{} = ts), do: ts.error
+
+  def unit(%Measurements.Timestamp{} = ts), do: ts.unit
+
+  @doc """
+  Convert the measurement to the new unit, if the new unit is more precise.
+
+  This will pick the most precise between the measurement's unit and the new unit.
+  Then it will convert the measurement to the chosen unit.
+
+  If no conversion is possible, the original measurement is returned.
+
+  ## Examples
+      #TODO : with timestamp now and mocks !
+      # iex> Measurements.Timestamp.new(42, :second) |> Measurements.Timestamp.convert(:millisecond)
+      # %Measurements.Timestamp{value: 42_000, unit: :millisecond, error: 1_000}
+
+      # iex> Measurements.Timestamp.new(42, :millisecond) |> Measurements.Timestamp.convert(:second)
+      # %Measurements.Timestamp{value: 42, unit: :millisecond, error: 1}
+
+  """
+  @spec convert(Measurements.Timestamp.t(), Measurements.Unit.t()) :: Measurements.Timestamp.t()
+
+  def convert(%Measurements.Timestamp{unit: u} = m, unit) when u == unit, do: m
+
+  def convert(%Measurements.Timestamp{} = m, unit) do
+    case Measurements.Unit.min(m.unit, unit) do
+      {:ok, min_unit} ->
+        # if Unit.min is successful, conversion will always work.
+        Measurements.Timestamp.convert(m, min_unit, :system)
+
+      # no conversion possible, just ignore it
+      {:error, :incompatible_dimension} ->
+        raise ArgumentError, message: "#{unit} dimension is not compatible with #{m.unit}"
+    end
+  end
 end
 
 defimpl String.Chars, for: Measurements.Timestamp do
