@@ -113,22 +113,6 @@ defmodule Measurements.Error do
 
   """
   defdelegate sum(e1, e2), to: Witchcraft.Semigroup, as: :append
-  # def sum(%__MODULE__{} = e1, %__MODULE__{} = e2)
-  #     when e1.unit == e2.unit do
-  #   new(e1.error + e2.error, e1.unit)
-  # end
-
-  # def sum(%__MODULE__{} = e1, %__MODULE__{} = e2) do
-  #   cond do
-  #     Unit.dimension(e1.unit) == Unit.dimension(e2.unit) ->
-  #       e1 = convert(e1, e2.unit)
-  #       e2 = convert(e2, e1.unit)
-  #       sum(e1, e2)
-
-  #     true ->
-  #       raise ArgumentError, message: "#{e1} and #{e2} have incompatible unit dimension"
-  #   end
-  # end
 
   @doc """
   Scales a measurement by a number.

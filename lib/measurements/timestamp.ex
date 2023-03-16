@@ -27,7 +27,8 @@ defmodule Measurements.Timestamp do
           node: String.t(),
           monotonic: integer(),
           unit: System.time_unit(),
-          vm_offset: integer()
+          vm_offset: integer(),
+          error: non_neg_integer()
         }
 
   # TODO : unify with Measurement struct...
@@ -253,8 +254,7 @@ defmodule Measurements.Timestamp do
     end
   end
 
-  # Note: sum between two timestmap is possible only if measurements comes from the same node
-
+  # Note: sum between two timestmap as timestamp is possible only if measurements comes from the same node
   def sum(%__MODULE__{} = v1, m) do
     if v1.unit ==
          Measurement.unit(m) do

@@ -127,35 +127,35 @@ defmodule Measurements.Unit.TimeTest do
     end
   end
 
-  describe "dimension/1" do
-    test "provides the dimension of a time unit" do
-      assert Time.dimension(Time.second()) == Dimension.new() |> Dimension.with_time(1)
-      assert Time.dimension(Time.millisecond()) == Dimension.new() |> Dimension.with_time(1)
-      assert Time.dimension(Time.microsecond()) == Dimension.new() |> Dimension.with_time(1)
-      assert Time.dimension(Time.nanosecond()) == Dimension.new() |> Dimension.with_time(1)
+  # describe "dimension/1" do
+  #   test "provides the dimension of a time unit" do
+  #     assert Time.dimension(Time.second()) == Dimension.new() |> Dimension.with_time(1)
+  #     assert Time.dimension(Time.millisecond()) == Dimension.new() |> Dimension.with_time(1)
+  #     assert Time.dimension(Time.microsecond()) == Dimension.new() |> Dimension.with_time(1)
+  #     assert Time.dimension(Time.nanosecond()) == Dimension.new() |> Dimension.with_time(1)
 
-      assert Time.dimension(1) == Dimension.new() |> Dimension.with_time(1)
-      assert Time.dimension(10) == Dimension.new() |> Dimension.with_time(1)
-      assert Time.dimension(100) == Dimension.new() |> Dimension.with_time(1)
-      assert Time.dimension(1000) == Dimension.new() |> Dimension.with_time(1)
+  #     assert Time.dimension(1) == Dimension.new() |> Dimension.with_time(1)
+  #     assert Time.dimension(10) == Dimension.new() |> Dimension.with_time(1)
+  #     assert Time.dimension(100) == Dimension.new() |> Dimension.with_time(1)
+  #     assert Time.dimension(1000) == Dimension.new() |> Dimension.with_time(1)
 
-      assert Time.dimension(Time.hertz()) == Dimension.new() |> Dimension.with_time(-1)
-      assert Time.dimension(Time.kilohertz()) == Dimension.new() |> Dimension.with_time(-1)
-      assert Time.dimension(Time.megahertz()) == Dimension.new() |> Dimension.with_time(-1)
-      assert Time.dimension(Time.gigahertz()) == Dimension.new() |> Dimension.with_time(-1)
-    end
+  #     assert Time.dimension(Time.hertz()) == Dimension.new() |> Dimension.with_time(-1)
+  #     assert Time.dimension(Time.kilohertz()) == Dimension.new() |> Dimension.with_time(-1)
+  #     assert Time.dimension(Time.megahertz()) == Dimension.new() |> Dimension.with_time(-1)
+  #     assert Time.dimension(Time.gigahertz()) == Dimension.new() |> Dimension.with_time(-1)
+  #   end
 
-    test "supports nil" do
-      assert Time.dimension(nil) == %Dimension{}
-    end
+  #   test "supports nil" do
+  #     assert Time.dimension(nil) == %Dimension{}
+  #   end
 
-    test "supports aliases" do
-      assert Time.dimension(:seconds) == %Dimension{time: 1}
-      assert Time.dimension(:milliseconds) == %Dimension{time: 1}
-      assert Time.dimension(:microseconds) == %Dimension{time: 1}
-      assert Time.dimension(:nanoseconds) == %Dimension{time: 1}
-    end
-  end
+  #   test "supports aliases" do
+  #     assert Time.dimension(:seconds) == %Dimension{time: 1}
+  #     assert Time.dimension(:milliseconds) == %Dimension{time: 1}
+  #     assert Time.dimension(:microseconds) == %Dimension{time: 1}
+  #     assert Time.dimension(:nanoseconds) == %Dimension{time: 1}
+  #   end
+  # end
 
   describe "unit/2" do
     @tag :second

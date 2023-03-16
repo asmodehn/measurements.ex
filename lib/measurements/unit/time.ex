@@ -56,22 +56,22 @@ defmodule Measurements.Unit.Time do
 
   @type t :: atom | non_neg_integer
 
-  @behaviour Dimensionable
-  @impl Dimensionable
+  # @behaviour Dimensionable
+  # @impl Dimensionable
 
-  # no special dimension if no unit. useful to break loop cleanly when alias not found.
-  def dimension(nil), do: Dimension.new()
+  # # no special dimension if no unit. useful to break loop cleanly when alias not found.
+  # def dimension(nil), do: Dimension.new()
 
-  def dimension(unit) when is_atom(unit) do
-    case Parser.parse(unit) do
-      {:ok, _scale, dimension} -> dimension
-      {:error, reason} -> raise ArgumentError, reason
-    end
-  end
+  # def dimension(unit) when is_atom(unit) do
+  #   case Parser.parse(unit) do
+  #     {:ok, _scale, dimension} -> dimension
+  #     {:error, reason} -> raise ArgumentError, reason
+  #   end
+  # end
 
-  def dimension(ps) when is_integer(ps) and ps > 0, do: Dimension.new() |> Dimension.with_time(1)
+  # def dimension(ps) when is_integer(ps) and ps > 0, do: Dimension.new() |> Dimension.with_time(1)
 
-  def dimension(other), do: raise(ArgumentError, message: argument_error_message(other))
+  # def dimension(other), do: raise(ArgumentError, message: argument_error_message(other))
 
   ###### NEW API
   def with_dimension(exp) when is_integer(exp), do: Dimension.new() |> Dimension.with_time(exp)

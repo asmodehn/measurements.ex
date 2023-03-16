@@ -193,7 +193,6 @@ defmodule Measurements.Unit.Parser do
         acc
       ) do
     # convert to readable unit when appropriate -> very special cases
-    # TODO : Regex to cover these cases ?
     final_acc =
       acc
       |> String.replace_prefix("per_second", "hertz")

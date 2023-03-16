@@ -168,7 +168,7 @@ defmodule Measurements.Unit do
   # end
 
   @doc """
-  The structure of the unit
+  The Unit as a struct
   """
   # TODO :review hte API, alwys go with a Dimension...
   @spec scale(atom) :: {:ok, Scale.t()} | {:error, term}

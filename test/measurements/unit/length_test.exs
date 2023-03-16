@@ -65,27 +65,27 @@ defmodule Measurements.Unit.LengthTest do
     end
   end
 
-  describe "dimension/1" do
-    test "provides the dimension of a length unit" do
-      assert Length.dimension(Length.kilometer()) == Dimension.new() |> Dimension.with_length(1)
-      assert Length.dimension(Length.meter()) == Dimension.new() |> Dimension.with_length(1)
-      assert Length.dimension(Length.millimeter()) == Dimension.new() |> Dimension.with_length(1)
-      assert Length.dimension(Length.micrometer()) == Dimension.new() |> Dimension.with_length(1)
-      assert Length.dimension(Length.nanometer()) == Dimension.new() |> Dimension.with_length(1)
-    end
+  # describe "dimension/1" do
+  #   test "provides the dimension of a length unit" do
+  #     assert Length.dimension(Length.kilometer()) == Dimension.new() |> Dimension.with_length(1)
+  #     assert Length.dimension(Length.meter()) == Dimension.new() |> Dimension.with_length(1)
+  #     assert Length.dimension(Length.millimeter()) == Dimension.new() |> Dimension.with_length(1)
+  #     assert Length.dimension(Length.micrometer()) == Dimension.new() |> Dimension.with_length(1)
+  #     assert Length.dimension(Length.nanometer()) == Dimension.new() |> Dimension.with_length(1)
+  #   end
 
-    test "supports nil" do
-      assert Length.dimension(nil) == %Dimension{}
-    end
+  #   test "supports nil" do
+  #     assert Length.dimension(nil) == %Dimension{}
+  #   end
 
-    test " supports aliases" do
-      assert Length.dimension(:kilometers) == %Dimension{length: 1}
-      assert Length.dimension(:meters) == %Dimension{length: 1}
-      assert Length.dimension(:millimeters) == %Dimension{length: 1}
-      assert Length.dimension(:micrometers) == %Dimension{length: 1}
-      assert Length.dimension(:nanometers) == %Dimension{length: 1}
-    end
-  end
+  #   test " supports aliases" do
+  #     assert Length.dimension(:kilometers) == %Dimension{length: 1}
+  #     assert Length.dimension(:meters) == %Dimension{length: 1}
+  #     assert Length.dimension(:millimeters) == %Dimension{length: 1}
+  #     assert Length.dimension(:micrometers) == %Dimension{length: 1}
+  #     assert Length.dimension(:nanometers) == %Dimension{length: 1}
+  #   end
+  # end
 
   describe "unit/2" do
     @tag :meter

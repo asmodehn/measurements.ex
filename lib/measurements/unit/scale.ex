@@ -25,7 +25,6 @@ defmodule Measurements.Unit.Scale do
     %__MODULE__{
       magnitude: magnitude,
       coefficient: coefficient,
-      # WIP
       dimension: dimension
     }
   end
@@ -82,18 +81,34 @@ defmodule Measurements.Unit.Scale do
 end
 
 defimpl String.Chars, for: Measurements.Unit.Scale do
-  def to_string(%Measurements.Unit.Scale{
-        coefficient: 1,
-        magnitude: m
-      }) do
-    "10**#{m}"
-  end
+  alias Measurements.Unit.Dimension
 
   def to_string(%Measurements.Unit.Scale{
-        coefficient: c,
-        magnitude: m
+        coefficient: 1,
+        magnitude: 0,
+        dimension: d
       }) do
-    "#{c} * 10**#{m}"
+    {:ok, dim_mod} = Dimension.module(d)
+    dim_mod.to_string(d)
+  end
+
+  def to_string(
+        %Measurements.Unit.Scale{
+          coefficient: 1,
+          magnitude: m
+        } = scale
+      ) do
+    s = %{scale | magnitude: 0}
+    "10**#{m} #{s}"
+  end
+
+  def to_string(
+        %Measurements.Unit.Scale{
+          coefficient: c
+        } = scale
+      ) do
+    s = %{scale | coefficient: 1}
+    "#{c} * #{s}"
   end
 end
 

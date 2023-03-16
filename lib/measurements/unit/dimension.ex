@@ -168,7 +168,7 @@ defimpl String.Chars, for: Measurements.Unit.Dimension do
         lintensity: j
       }) do
     repr = ""
-    repr <> if t != 0, do: "T**#{t} ", else: ""
+    repr <> if t != 0, do: "T**#{t}", else: ""
     repr <> if l != 0, do: "L**#{l} ", else: ""
     repr <> if m != 0, do: "M**#{m} ", else: ""
     repr <> if i != 0, do: "I**#{i} ", else: ""
