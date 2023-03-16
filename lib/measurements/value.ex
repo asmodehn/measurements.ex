@@ -1,4 +1,9 @@
 defmodule Measurements.Value do
+  @moduledoc """
+
+  The `Value` of a measurement, represented by an integer value, a positive error, and a unit.
+  """
+
   alias Measurements.Unit
   alias Measurements.Measurement
 
@@ -134,48 +139,46 @@ defmodule Measurements.Value do
 
   """
   def sum(%__MODULE__{} = v1, m) do
-    cond do
-      v1.unit == Measurement.unit(m) ->
-        new(
-          v1.value + Measurement.value(m),
-          v1.unit,
-          v1.error + Measurement.error(m)
-        )
-
-      true ->
-        with {:ok, s1} <- Unit.scale(v1.unit),
-             {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
-          if s1.dimension == s2.dimension do
-            v1 = Measurement.convert(v1, Measurement.unit(m))
-            m = Measurement.convert(m, v1.unit)
-            sum(v1, m)
-          else
-            raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
-          end
+    if v1.unit ==
+         Measurement.unit(m) do
+      new(
+        v1.value + Measurement.value(m),
+        v1.unit,
+        v1.error + Measurement.error(m)
+      )
+    else
+      with {:ok, s1} <- Unit.scale(v1.unit),
+           {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
+        if s1.dimension == s2.dimension do
+          v1 = Measurement.convert(v1, Measurement.unit(m))
+          m = Measurement.convert(m, v1.unit)
+          sum(v1, m)
+        else
+          raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
         end
+      end
     end
   end
 
   def delta(%__MODULE__{} = v1, m) do
-    cond do
-      v1.unit == Measurement.unit(m) ->
-        new(
-          v1.value - Measurement.value(m),
-          v1.unit,
-          v1.error + Measurement.error(m)
-        )
-
-      true ->
-        with {:ok, s1} <- Unit.scale(v1.unit),
-             {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
-          if s1.dimension == s2.dimension do
-            m1 = Measurement.convert(v1, Measurement.unit(m))
-            m2 = Measurement.convert(m, v1.unit)
-            delta(m1, m2)
-          else
-            raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
-          end
+    if v1.unit ==
+         Measurement.unit(m) do
+      new(
+        v1.value - Measurement.value(m),
+        v1.unit,
+        v1.error + Measurement.error(m)
+      )
+    else
+      with {:ok, s1} <- Unit.scale(v1.unit),
+           {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
+        if s1.dimension == s2.dimension do
+          m1 = Measurement.convert(v1, Measurement.unit(m))
+          m2 = Measurement.convert(m, v1.unit)
+          delta(m1, m2)
+        else
+          raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
         end
+      end
     end
   end
 
@@ -200,31 +203,30 @@ defmodule Measurements.Value do
   end
 
   def ratio(%__MODULE__{} = v1, m) do
-    cond do
-      v1.unit == Measurement.unit(m) ->
-        v1_rel_err = v1.error / v1.value
-        v2_rel_err = Measurement.error(m) / Measurement.value(m)
+    if v1.unit ==
+         Measurement.unit(m) do
+      v1_rel_err = v1.error / v1.value
+      v2_rel_err = Measurement.error(m) / Measurement.value(m)
 
-        value =
-          if rem(v1.value, Measurement.value(m)) == 0,
-            do: div(v1.value, Measurement.value(m)),
-            else: v1.value / Measurement.value(m)
+      value =
+        if rem(v1.value, Measurement.value(m)) == 0,
+          do: div(v1.value, Measurement.value(m)),
+          else: v1.value / Measurement.value(m)
 
-        error = abs(value * (v1_rel_err + v2_rel_err))
+      error = abs(value * (v1_rel_err + v2_rel_err))
 
-        new(value, nil, error)
-
-      true ->
-        with {:ok, s1} <- Unit.scale(v1.unit),
-             {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
-          if s1.dimension == s2.dimension do
-            m1 = Measurement.convert(v1, Measurement.unit(m))
-            m2 = Measurement.convert(m, v1.unit)
-            ratio(m1, m2)
-          else
-            raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
-          end
+      new(value, nil, error)
+    else
+      with {:ok, s1} <- Unit.scale(v1.unit),
+           {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
+        if s1.dimension == s2.dimension do
+          m1 = Measurement.convert(v1, Measurement.unit(m))
+          m2 = Measurement.convert(m, v1.unit)
+          ratio(m1, m2)
+        else
+          raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
         end
+      end
     end
   end
 end

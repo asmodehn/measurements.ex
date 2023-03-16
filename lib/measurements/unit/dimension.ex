@@ -70,105 +70,91 @@ defmodule Measurements.Unit.Dimension do
   defdelegate delta(d1, d2), to: Measurements.Additive.Group, as: :delta
   defdelegate opposite(d1), to: Measurements.Additive.Group, as: :inverse
 
-  def module(
-        %__MODULE__{
-          time: t,
-          length: 0,
-          mass: 0,
-          current: 0,
-          temperature: 0,
-          substance: 0,
-          lintensity: 0
-        } = scale
-      )
+  def module(%__MODULE__{
+        time: t,
+        length: 0,
+        mass: 0,
+        current: 0,
+        temperature: 0,
+        substance: 0,
+        lintensity: 0
+      })
       when t != 0,
       do: {:ok, Time}
 
-  def module(
-        %__MODULE__{
-          time: 0,
-          length: l,
-          mass: 0,
-          current: 0,
-          temperature: 0,
-          substance: 0,
-          lintensity: 0
-        } = scale
-      )
+  def module(%__MODULE__{
+        time: 0,
+        length: l,
+        mass: 0,
+        current: 0,
+        temperature: 0,
+        substance: 0,
+        lintensity: 0
+      })
       when l != 0,
       do: {:ok, Length}
 
-  def module(
-        %__MODULE__{
-          time: 0,
-          length: 0,
-          mass: m,
-          current: 0,
-          temperature: 0,
-          substance: 0,
-          lintensity: 0
-        } = scale
-      )
+  def module(%__MODULE__{
+        time: 0,
+        length: 0,
+        mass: m,
+        current: 0,
+        temperature: 0,
+        substance: 0,
+        lintensity: 0
+      })
       when m != 0,
       do: {:ok, Mass}
 
-  def module(
-        %__MODULE__{
-          time: 0,
-          length: 0,
-          mass: 0,
-          current: c,
-          temperature: 0,
-          substance: 0,
-          lintensity: 0
-        } = scale
-      )
+  def module(%__MODULE__{
+        time: 0,
+        length: 0,
+        mass: 0,
+        current: c,
+        temperature: 0,
+        substance: 0,
+        lintensity: 0
+      })
       when c != 0,
       do: {:ok, Current}
 
-  def module(
-        %__MODULE__{
-          time: 0,
-          length: 0,
-          mass: 0,
-          current: 0,
-          temperature: th,
-          substance: 0,
-          lintensity: 0
-        } = scale
-      )
+  def module(%__MODULE__{
+        time: 0,
+        length: 0,
+        mass: 0,
+        current: 0,
+        temperature: th,
+        substance: 0,
+        lintensity: 0
+      })
       when th != 0,
       do: {:ok, Temperature}
 
-  def module(
-        %__MODULE__{
-          time: 0,
-          length: 0,
-          mass: 0,
-          current: 0,
-          temperature: 0,
-          substance: s,
-          lintensity: 0
-        } = scale
-      )
+  def module(%__MODULE__{
+        time: 0,
+        length: 0,
+        mass: 0,
+        current: 0,
+        temperature: 0,
+        substance: s,
+        lintensity: 0
+      })
       when s != 0,
       do: {:ok, Substance}
 
-  def module(
-        %__MODULE__{
-          time: 0,
-          length: 0,
-          mass: 0,
-          current: 0,
-          temperature: 0,
-          substance: 0,
-          lintensity: li
-        } = scale
-      )
+  def module(%__MODULE__{
+        time: 0,
+        length: 0,
+        mass: 0,
+        current: 0,
+        temperature: 0,
+        substance: 0,
+        lintensity: li
+      })
       when li != 0,
       do: {:ok, Lintensity}
 
-  def module(%__MODULE__{} = scale), do: Derived
+  def module(%__MODULE__{}), do: Derived
 end
 
 defimpl String.Chars, for: Measurements.Unit.Dimension do

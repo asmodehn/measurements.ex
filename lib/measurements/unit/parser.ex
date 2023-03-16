@@ -1,4 +1,6 @@
 defmodule Measurements.Unit.Parser.TMPAPI do
+  @moduledoc false
+
   # Internal API
 
   alias Measurements.Unit.Time
@@ -140,13 +142,13 @@ defmodule Measurements.Unit.Parser do
 
   @spec prefix(Scale.t(), atom) :: {String.t(), Scale.t()}
 
-  def prefix(%Scale{magnitude: m} = s, :time), do: prefix(s, s.dimension.time)
-  def prefix(%Scale{magnitude: m} = s, :length), do: prefix(s, s.dimension.length)
-  def prefix(%Scale{magnitude: m} = s, :mass), do: prefix(s, s.dimension.mass)
-  def prefix(%Scale{magnitude: m} = s, :current), do: prefix(s, s.dimension.current)
-  def prefix(%Scale{magnitude: m} = s, :temperature), do: prefix(s, s.dimension.temperature)
-  def prefix(%Scale{magnitude: m} = s, :substance), do: prefix(s, s.dimension.substance)
-  def prefix(%Scale{magnitude: m} = s, :lintensity), do: prefix(s, s.dimension.lintensity)
+  def prefix(%Scale{} = s, :time), do: prefix(s, s.dimension.time)
+  def prefix(%Scale{} = s, :length), do: prefix(s, s.dimension.length)
+  def prefix(%Scale{} = s, :mass), do: prefix(s, s.dimension.mass)
+  def prefix(%Scale{} = s, :current), do: prefix(s, s.dimension.current)
+  def prefix(%Scale{} = s, :temperature), do: prefix(s, s.dimension.temperature)
+  def prefix(%Scale{} = s, :substance), do: prefix(s, s.dimension.substance)
+  def prefix(%Scale{} = s, :lintensity), do: prefix(s, s.dimension.lintensity)
 
   def prefix(%Scale{magnitude: m} = s, dims) when is_integer(dims) do
     cond do
@@ -229,9 +231,6 @@ defmodule Measurements.Unit.Parser do
   def to_unit(%Scale{dimension: %Dimension{time: t} = dim} = scale, acc) when t < 0,
     do: to_unit(%{scale | dimension: %{dim | time: -t}}, compose_acc_next(acc, "per"))
 
-  # def to_unit(%Scale{ dimension: %Dimension{time: t} = dim} = scale, acc) when t == 1,
-  #   do: to_unit(%{scale | dimension: %{dim | time: 0}}, compose_acc_next(acc, "second"))
-
   def to_unit(%Scale{magnitude: m, dimension: %Dimension{time: t} = dim} = scale, acc)
       when t > 0 do
     mag_rem = Integer.mod(m, t)
@@ -241,7 +240,7 @@ defmodule Measurements.Unit.Parser do
         scale
       else
         # move rem to coef
-        new_scale = Scale.mag_down(scale, mag_rem)
+        Scale.mag_down(scale, mag_rem)
       end
 
     # => rem is always 0
@@ -256,10 +255,6 @@ defmodule Measurements.Unit.Parser do
   defp compose_acc_next(acc, next) when acc == "", do: next
 
   defp compose_acc_next(acc, next) do
-    if not String.ends_with?(acc, "_") do
-      acc <> "_" <> next
-    else
-      acc <> next
-    end
+    if(String.ends_with?(acc, "_"), do: acc, else: acc <> "_") <> next
   end
 end

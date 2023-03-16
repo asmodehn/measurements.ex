@@ -1,4 +1,9 @@
 defmodule Measurements.Timestamp do
+  @moduledoc """
+
+  A timestamp, as local a measurement.
+  """
+
   # hiding Elixir.System to make sure we do not inadvertently use it
   alias Measurements.System
   # hiding Elixir.Process to make sure we do not inadvertently use it
@@ -94,25 +99,24 @@ defmodule Measurements.Timestamp do
 
   def delta(%__MODULE__{} = v1, m) do
     # Note:adding something that is not a timestamp produce a usual value.
-    cond do
-      v1.unit == Measurement.unit(m) ->
-        Value.new(
-          Measurement.value(v1) - Measurement.value(m),
-          v1.unit,
-          v1.error + Measurement.error(m)
-        )
-
-      true ->
-        with {:ok, s1} <- Unit.scale(v1.unit),
-             {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
-          if s1.dimension == s2.dimension do
-            m1 = Measurement.convert(v1, Measurement.unit(m))
-            m2 = Measurement.convert(m, v1.unit)
-            delta(m1, m2)
-          else
-            raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
-          end
+    if v1.unit ==
+         Measurement.unit(m) do
+      Value.new(
+        Measurement.value(v1) - Measurement.value(m),
+        v1.unit,
+        v1.error + Measurement.error(m)
+      )
+    else
+      with {:ok, s1} <- Unit.scale(v1.unit),
+           {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
+        if s1.dimension == s2.dimension do
+          m1 = Measurement.convert(v1, Measurement.unit(m))
+          m2 = Measurement.convert(m, v1.unit)
+          delta(m1, m2)
+        else
+          raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
         end
+      end
     end
   end
 
@@ -252,26 +256,25 @@ defmodule Measurements.Timestamp do
   # Note: sum between two timestmap is possible only if measurements comes from the same node
 
   def sum(%__MODULE__{} = v1, m) do
-    cond do
-      v1.unit == Measurement.unit(m) ->
-        # Note:adding something that is not a timstamp produce a usual value.
-        Value.new(
-          Measurement.value(v1) + Measurement.value(m),
-          v1.unit,
-          v1.error + Measurement.error(m)
-        )
-
-      true ->
-        with {:ok, s1} <- Unit.scale(v1.unit),
-             {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
-          if s1.dimension == s2.dimension do
-            v1 = Measurement.convert(v1, Measurement.unit(m))
-            m = Measurement.convert(m, v1.unit)
-            sum(v1, m)
-          else
-            raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
-          end
+    if v1.unit ==
+         Measurement.unit(m) do
+      # Note:adding something that is not a timstamp produce a usual value.
+      Value.new(
+        Measurement.value(v1) + Measurement.value(m),
+        v1.unit,
+        v1.error + Measurement.error(m)
+      )
+    else
+      with {:ok, s1} <- Unit.scale(v1.unit),
+           {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
+        if s1.dimension == s2.dimension do
+          v1 = Measurement.convert(v1, Measurement.unit(m))
+          m = Measurement.convert(m, v1.unit)
+          sum(v1, m)
+        else
+          raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
         end
+      end
     end
   end
 

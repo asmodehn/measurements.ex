@@ -152,9 +152,9 @@ defmodule Measurements.Unit do
   #   Derived.unit(s, d)
   # end
 
-  @doc """
-  The dimension of the unit
-  """
+  # @doc """
+  # The dimension of the unit
+  # """
 
   # # TODO :review hte API, alwys go with a Scale...
   # @spec dimension(atom) :: {:ok, Dimension.t()} | {:error, term}
@@ -168,6 +168,7 @@ defmodule Measurements.Unit do
   # end
 
   @doc """
+  The structure of the unit
   """
   # TODO :review hte API, alwys go with a Dimension...
   @spec scale(atom) :: {:ok, Scale.t()} | {:error, term}

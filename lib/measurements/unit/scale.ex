@@ -102,7 +102,7 @@ defimpl TypeClass.Property.Generator, for: Measurements.Unit.Scale do
     do: %Measurements.Unit.Scale{
       # coefficient: :random.uniform(1000),  # int between 0 to 1000
       # float betweeo 0.0 and 1000.0
-      coefficient: :random.uniform() * 1000,
+      coefficient: :rand.uniform() * 1000,
       magnitude: Enum.random(-12..12)
     }
 end

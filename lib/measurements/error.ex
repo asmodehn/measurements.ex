@@ -14,6 +14,8 @@ defmodule Measurements.Error do
         }
 
   defmodule Behaviour do
+    @moduledoc false
+
     @type error :: non_neg_integer | float
     @type unit :: Measurements.Unit.t()
 

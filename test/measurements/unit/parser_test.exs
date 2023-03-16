@@ -328,12 +328,12 @@ defmodule Measurements.Unit.ParserTest do
       {:millimeter_2, scale} =
         Parser.to_unit(%Scale{coefficient: 1, magnitude: -3, dimension: %Dimension{length: 2}})
 
-      assert Scale.convert(scale).(42) == 42000
+      assert Scale.convert(scale).(42) == 42_000
 
       {:millisecond_2, scale} =
         Parser.to_unit(%Scale{coefficient: 1, magnitude: -3, dimension: %Dimension{time: 2}})
 
-      assert Scale.convert(scale).(42) == 42000
+      assert Scale.convert(scale).(42) == 42_000
     end
   end
 end
