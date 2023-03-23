@@ -4,4 +4,6 @@ defprotocol Measurements.Measurement do
   def unit(m)
 
   def convert(m, unit)
+
+  # TODO : this should eventually become a type class, so that we check properties on unit conversion
 end

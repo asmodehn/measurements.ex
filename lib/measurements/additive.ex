@@ -9,10 +9,10 @@ defclass Measurements.Additive.Group do
 
   """
 
-  extend(Witchcraft.Monoid)
+  extend(Measurements.Additive.Monoid)
 
-  alias Witchcraft.Monoid
-  alias Witchcraft.Semigroup
+  alias Measurements.Additive.Monoid
+  alias Measurements.Additive.Semigroup
 
   # A group is a monoid with invertibility
 
@@ -23,6 +23,7 @@ defclass Measurements.Additive.Group do
         iex>  Measurements.Additive.Group.inverse(10)
         -10
     """
+    # TODO : rename to "opposite"
     def inverse(g)
   end
 
@@ -35,7 +36,7 @@ defclass Measurements.Additive.Group do
       -7
   """
   def delta(g1, g2) do
-    Semigroup.append(g1, inverse(g2))
+    Semigroup.sum(g1, inverse(g2))
   end
 
   @doc ~S"""
@@ -46,25 +47,25 @@ defclass Measurements.Additive.Group do
       iex>  Measurements.Additive.Group.scale(10, -2)
       -20
   """
-  def scale(g, 0), do: Monoid.empty(g)
+  def scale(g, 0), do: Monoid.init(g)
 
   def scale(g, n) when is_integer(n) and n > 0 do
-    Semigroup.append(g, scale(g, n - 1))
+    Semigroup.sum(g, scale(g, n - 1))
   end
 
   def scale(g, n) when is_integer(n) and n < 0 do
-    Semigroup.append(inverse(g), scale(g, n + 1))
+    Semigroup.sum(inverse(g), scale(g, n + 1))
   end
 
   properties do
     def right_inverse(data) do
       a = generate(data)
-      Semigroup.append(a, Measurements.Additive.Group.inverse(a)) == Monoid.empty(a)
+      Semigroup.sum(a, Measurements.Additive.Group.inverse(a)) == Monoid.init(a)
     end
 
     def left_inverse(data) do
       a = generate(data)
-      Semigroup.append(Measurements.Additive.Group.inverse(a), a) == Monoid.empty(a)
+      Semigroup.sum(Measurements.Additive.Group.inverse(a), a) == Monoid.init(a)
     end
 
     # TODO : Abelian ? commutativity ?? or only in linear space.

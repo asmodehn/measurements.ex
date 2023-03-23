@@ -41,7 +41,7 @@ defmodule Measurements.TimestampTest do
     end
   end
 
-  describe "delta/2" do
+  describe "duration/2" do
     test "compute the difference beween two timestamps of the same node" do
       System.OriginalMock
       |> expect(:monotonic_time, fn :millisecond -> 42 end)
@@ -55,7 +55,7 @@ defmodule Measurements.TimestampTest do
       previous = Timestamp.now(:millisecond)
       now = Timestamp.now(:millisecond)
 
-      assert Timestamp.delta(now, previous) ==
+      assert Timestamp.duration(now, previous) ==
                %Measurements.Value{unit: :millisecond, value: 9}
     end
 
@@ -73,7 +73,7 @@ defmodule Measurements.TimestampTest do
       previous = Timestamp.now(:millisecond)
       now = Timestamp.now(:millisecond)
 
-      assert Timestamp.delta(now, previous) ==
+      assert Timestamp.duration(now, previous) ==
                %Measurements.Value{unit: :millisecond, value: 9 - 2}
     end
 
@@ -91,7 +91,7 @@ defmodule Measurements.TimestampTest do
       previous = Timestamp.now(:millisecond)
       now = Timestamp.now(:microsecond)
 
-      assert Timestamp.delta(now, previous) ==
+      assert Timestamp.duration(now, previous) ==
                %Measurements.Value{unit: :microsecond, value: 9_000 - 2_000}
     end
   end
@@ -158,37 +158,37 @@ defmodule Measurements.TimestampTest do
     end
   end
 
-  describe "sum/2" do
-    test "sum two timestamps of same origin as a timestamp with error" do
-      System.OriginalMock
-      |> expect(:monotonic_time, fn :millisecond -> 42 end)
-      |> expect(:time_offset, fn :millisecond -> 3 end)
+  # describe "sum/2" do
+  #   test "sum two timestamps of same origin as a timestamp with error" do
+  #     System.OriginalMock
+  #     |> expect(:monotonic_time, fn :millisecond -> 42 end)
+  #     |> expect(:time_offset, fn :millisecond -> 3 end)
 
-      Node.OriginalMock
-      |> expect(:self, fn -> :nonode@A end)
+  #     Node.OriginalMock
+  #     |> expect(:self, fn -> :nonode@A end)
 
-      s1 = Timestamp.now(:millisecond)
+  #     s1 = Timestamp.now(:millisecond)
 
-      System.OriginalMock
-      |> expect(:monotonic_time, fn :millisecond -> 51 end)
-      |> expect(:time_offset, fn :millisecond -> 5 end)
+  #     System.OriginalMock
+  #     |> expect(:monotonic_time, fn :millisecond -> 51 end)
+  #     |> expect(:time_offset, fn :millisecond -> 5 end)
 
-      Node.OriginalMock
-      |> expect(:self, fn -> :nonode@A end)
+  #     Node.OriginalMock
+  #     |> expect(:self, fn -> :nonode@A end)
 
-      s2 = Timestamp.now(:millisecond)
+  #     s2 = Timestamp.now(:millisecond)
 
-      assert Timestamp.sum(s2, s1) == %Timestamp{
-               node: :nonode@A,
-               unit: :millisecond,
-               monotonic: 42 + 51,
-               # offset is the average of both offsets
-               vm_offset: 4,
-               # error is previous error (0) + the difference in offset
-               error: 2
-             }
-    end
-  end
+  #     assert Timestamp.sum(s2, s1) == %Timestamp{
+  #              node: :nonode@A,
+  #              unit: :millisecond,
+  #              monotonic: 42 + 51,
+  #              # offset is the average of both offsets
+  #              vm_offset: 4,
+  #              # error is previous error (0) + the difference in offset
+  #              error: 2
+  #            }
+  #   end
+  # end
 
   describe "Measurement protocol" do
     # TODO

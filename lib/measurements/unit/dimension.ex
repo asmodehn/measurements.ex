@@ -66,9 +66,30 @@ defmodule Measurements.Unit.Dimension do
     %{d | lintensity: d.lintensity + n}
   end
 
-  defdelegate sum(d1, d2), to: Witchcraft.Semigroup, as: :append
+  def sum(%Measurements.Unit.Dimension{} = d1, %Measurements.Unit.Dimension{} = d2) do
+    %Measurements.Unit.Dimension{
+      time: d1.time + d2.time,
+      length: d1.length + d2.length,
+      mass: d1.mass + d2.mass,
+      current: d1.current + d2.current,
+      temperature: d1.temperature + d2.temperature,
+      substance: d1.substance + d2.substance,
+      lintensity: d1.lintensity + d2.lintensity
+    }
+  end
+
+  def opposite(%Measurements.Unit.Dimension{} = d) do
+    d
+    |> Map.update!(:time, &(-&1))
+    |> Map.update!(:length, &(-&1))
+    |> Map.update!(:mass, &(-&1))
+    |> Map.update!(:current, &(-&1))
+    |> Map.update!(:temperature, &(-&1))
+    |> Map.update!(:substance, &(-&1))
+    |> Map.update!(:lintensity, &(-&1))
+  end
+
   defdelegate delta(d1, d2), to: Measurements.Additive.Group, as: :delta
-  defdelegate opposite(d1), to: Measurements.Additive.Group, as: :inverse
 
   def module(%__MODULE__{
         time: t,
@@ -193,35 +214,16 @@ end
 
 import TypeClass
 
-definst Witchcraft.Semigroup, for: Measurements.Unit.Dimension do
-  def append(%Measurements.Unit.Dimension{} = d1, %Measurements.Unit.Dimension{} = d2) do
-    %Measurements.Unit.Dimension{
-      time: d1.time + d2.time,
-      length: d1.length + d2.length,
-      mass: d1.mass + d2.mass,
-      current: d1.current + d2.current,
-      temperature: d1.temperature + d2.temperature,
-      substance: d1.substance + d2.substance,
-      lintensity: d1.lintensity + d2.lintensity
-    }
-  end
+definst Measurements.Additive.Semigroup, for: Measurements.Unit.Dimension do
+  defdelegate sum(d1, d2), to: Measurements.Unit.Dimension, as: :sum
 end
 
-definst Witchcraft.Monoid, for: Measurements.Unit.Dimension do
-  def empty(_d) do
-    %Measurements.Unit.Dimension{}
+definst Measurements.Additive.Monoid, for: Measurements.Unit.Dimension do
+  def init(_d) do
+    Measurements.Unit.Dimension.new()
   end
 end
 
 definst Measurements.Additive.Group, for: Measurements.Unit.Dimension do
-  def inverse(%Measurements.Unit.Dimension{} = d) do
-    d
-    |> Map.update!(:time, &(-&1))
-    |> Map.update!(:length, &(-&1))
-    |> Map.update!(:mass, &(-&1))
-    |> Map.update!(:current, &(-&1))
-    |> Map.update!(:temperature, &(-&1))
-    |> Map.update!(:substance, &(-&1))
-    |> Map.update!(:lintensity, &(-&1))
-  end
+  defdelegate inverse(d), to: Measurements.Unit.Dimension, as: :opposite
 end

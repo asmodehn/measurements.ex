@@ -106,15 +106,34 @@ defmodule MeasurementsTest do
 
       s2 = Timestamp.now(:millisecond)
 
-      assert Measurements.sum(s2, s1) == %Timestamp{
-               node: :nonode@A,
+      assert Timestamp.system_time(s2) == %Measurements.Value{
+               value: 56,
                unit: :millisecond,
-               monotonic: 42 + 51,
-               # the average of offsets
-               vm_offset: 4,
-               # the delta of offsets
-               error: 2
+               error: 0
              }
+
+      assert Timestamp.system_time(s1) == %Measurements.Value{
+               value: 45,
+               unit: :millisecond,
+               error: 0
+             }
+
+      assert Measurements.sum(s2, s1) == %Measurements.Value{
+               value: 101,
+               unit: :millisecond,
+               error: 0
+             }
+
+      # Measurement sum is a Value ! Not a timestamp any more...
+      # %Timestamp{
+      #          node: :nonode@A,
+      #          unit: :millisecond,
+      #          monotonic: 42 + 51,
+      #          # the average of offsets
+      #          vm_offset: 4,
+      #          # the delta of offsets
+      #          error: 2
+      #        }
     end
 
     test "sums a timestamp and a time value" do

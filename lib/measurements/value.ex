@@ -138,27 +138,7 @@ defmodule Measurements.Value do
       }
 
   """
-  def sum(%__MODULE__{} = v1, m) do
-    if v1.unit ==
-         Measurement.unit(m) do
-      new(
-        v1.value + Measurement.value(m),
-        v1.unit,
-        v1.error + Measurement.error(m)
-      )
-    else
-      with {:ok, s1} <- Unit.scale(v1.unit),
-           {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
-        if s1.dimension == s2.dimension do
-          v1 = Measurement.convert(v1, Measurement.unit(m))
-          m = Measurement.convert(m, v1.unit)
-          sum(v1, m)
-        else
-          raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
-        end
-      end
-    end
-  end
+  defdelegate sum(v1, m), to: Measurements.Additive.Semigroup, as: :sum
 
   def delta(%__MODULE__{} = v1, m) do
     if v1.unit ==
@@ -291,5 +271,59 @@ defimpl String.Chars, for: Measurements.Value do
     u = Measurements.Unit.to_string(unit)
 
     "#{v} ±#{err} #{u}"
+  end
+end
+
+import TypeClass
+
+defimpl TypeClass.Property.Generator, for: Measurements.Value do
+  require Measurements.Unit.Time
+  require Measurements.Unit.Length
+
+  def generate(_),
+    do:
+      Measurements.Value.new(
+        :rand.uniform(1000),
+        Enum.random(Measurements.Unit.Time.__units() ++ Measurements.Unit.Length.__units()),
+        :rand.uniform(10)
+      )
+end
+
+definst Measurements.Additive.Semigroup, for: Measurements.Value do
+  alias Measurements.Measurement
+  alias Measurements.Unit
+
+  require Unit.{Time, Length}
+
+  custom_generator(_) do
+    Measurements.Value.new(
+      :rand.uniform(1000),
+      # Enum.random(Measurements.Unit.Time.__units() ++ Measurements.Unit.Length.__units())
+      # Enum.random(Measurements.Unit.Time.__units() ) # not working because Hz and second in same module...
+      Enum.random(Measurements.Unit.Length.__units())
+      # TODO : handle unit algebra ? how ??
+    )
+  end
+
+  def sum(%Measurements.Value{} = v1, m) do
+    if v1.unit ==
+         Measurement.unit(m) do
+      Measurements.Value.new(
+        v1.value + Measurement.value(m),
+        v1.unit,
+        v1.error + Measurement.error(m)
+      )
+    else
+      with {:ok, s1} <- Unit.scale(v1.unit),
+           {:ok, s2} <- Unit.scale(Measurement.unit(m)) do
+        if s1.dimension == s2.dimension do
+          v1 = Measurement.convert(v1, Measurement.unit(m))
+          m = Measurement.convert(m, v1.unit)
+          sum(v1, m)
+        else
+          raise ArgumentError, message: "#{v1} and #{m} have incompatible unit dimension"
+        end
+      end
+    end
   end
 end

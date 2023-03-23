@@ -8,7 +8,7 @@ defmodule Measurements.Unit.Scale do
   alias Measurements.Unit.Dimension
 
   defstruct magnitude: 0,
-            # default as float to cover both float and int usecase for property test
+            # default as float to cover all usecases (int and float) by relying on elixir's == operator
             coefficient: 1.0,
             dimension: %Dimension{}
 
@@ -16,7 +16,7 @@ defmodule Measurements.Unit.Scale do
   @type t :: %__MODULE__{
           # TODO : rename to :scale
           magnitude: integer,
-          coefficient: integer | float,
+          coefficient: float,
           dimension: Dimension.t()
         }
 
@@ -138,7 +138,7 @@ end
 
 definst Measurements.Multiplicative.Monoid, for: Measurements.Unit.Scale do
   def init(_d) do
-    %Measurements.Unit.Scale{}
+    Measurements.Unit.Scale.new()
   end
 end
 

@@ -7,7 +7,6 @@ defmodule Measurements.Unit.Time do
   alias Measurements.Unit.Scale
   alias Measurements.Unit.Parser
 
-  alias Measurements.Unit.Dimensionable
   alias Measurements.Unit.Scalable
   alias Measurements.Unit.Unitable
 
@@ -18,11 +17,11 @@ defmodule Measurements.Unit.Time do
   defmacro microsecond, do: quote(do: :microsecond)
   defmacro nanosecond, do: quote(do: :nanosecond)
 
-  defmacro attohertz, do: quote(do: :attohertz)
-  defmacro hertz, do: quote(do: :hertz)
-  defmacro kilohertz, do: quote(do: :kilohertz)
-  defmacro megahertz, do: quote(do: :megahertz)
-  defmacro gigahertz, do: quote(do: :gigahertz)
+  # defmacro attohertz, do: quote(do: :attohertz)
+  # defmacro hertz, do: quote(do: :hertz)
+  # defmacro kilohertz, do: quote(do: :kilohertz)
+  # defmacro megahertz, do: quote(do: :megahertz)
+  # defmacro gigahertz, do: quote(do: :gigahertz)
 
   @doc """
   macro used for reflection at compile time: which units are usable with this module.
@@ -32,11 +31,11 @@ defmodule Measurements.Unit.Time do
       second(),
       millisecond(),
       microsecond(),
-      nanosecond(),
-      hertz(),
-      kilohertz(),
-      megahertz(),
-      gigahertz()
+      nanosecond()
+      # hertz(),
+      # kilohertz(),
+      # megahertz(),
+      # gigahertz()
     ]
 
   defmacro __alias(unit),
@@ -161,10 +160,10 @@ defmodule Measurements.Unit.Time do
   def to_string(millisecond()), do: "ms"
   def to_string(microsecond()), do: "μs"
   def to_string(nanosecond()), do: "ns"
-  def to_string(hertz()), do: "Hz"
-  def to_string(kilohertz()), do: "kHz"
-  def to_string(megahertz()), do: "MHz"
-  def to_string(gigahertz()), do: "GHz"
+  # def to_string(hertz()), do: "Hz"
+  # def to_string(kilohertz()), do: "kHz"
+  # def to_string(megahertz()), do: "MHz"
+  # def to_string(gigahertz()), do: "GHz"
 
   def to_string(unit) when is_atom(unit) do
     {:ok, %Scale{coefficient: 1} = scale, _dim} = Parser.parse(unit)
@@ -199,9 +198,10 @@ defmodule Measurements.Unit.Time do
   def to_string(unit) when is_integer(unit), do: " @ #{unit} Hz"
 
   defp argument_error_message(other),
+    # "#{hertz()}, #{kilohertz()}, #{megahertz()}, #{gigahertz()}, " <>
     do:
       "unsupported time unit. Expected #{second()}, #{millisecond()}, " <>
-        "#{microsecond()}, #{nanosecond()}, #{hertz()}, #{kilohertz()}, " <>
-        "#{megahertz()}, #{gigahertz()}, or any positive integer. " <>
+        "#{microsecond()}, #{nanosecond()}, " <>
+        "or any positive integer. " <>
         "Got #{inspect(other)}"
 end

@@ -7,7 +7,6 @@ defmodule Measurements.Unit.Length do
   alias Measurements.Unit.Scale
   alias Measurements.Unit.Parser
 
-  alias Measurements.Unit.Dimensionable
   alias Measurements.Unit.Scalable
   alias Measurements.Unit.Unitable
 

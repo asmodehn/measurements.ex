@@ -100,8 +100,8 @@ defmodule Measurements do
       }
 
   """
-
-  def sum(%module{} = m1, m2), do: module.sum(m1, m2)
+  defdelegate sum(m1, m2), to: Measurements.Additive.Semigroup, as: :sum
+  # def sum(%module{} = m1, m2), do: module.sum(m1, m2)
 
   @doc """
   Scales a measurement by a number.
