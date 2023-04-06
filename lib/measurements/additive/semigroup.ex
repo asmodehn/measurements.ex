@@ -23,11 +23,8 @@ defclass Measurements.Additive.Semigroup do
 
   properties do
     def associative(data) do
-      # |> IO.inspect()
       a = generate(data)
-      # |> IO.inspect()
       b = generate(data)
-      # |> IO.inspect()
       c = generate(data)
 
       left =
@@ -40,7 +37,7 @@ defclass Measurements.Additive.Semigroup do
           Measurements.Additive.Semigroup.sum(b, c)
         )
 
-      if not equal?(left |> IO.inspect(), right |> IO.inspect()) do
+      if not equal?(left, right) do
         IO.inspect("(#{a} + #{b}) + #{c} != #{a} + (#{b} + #{c})")
         IO.inspect(left)
         IO.inspect(right)

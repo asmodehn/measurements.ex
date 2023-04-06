@@ -200,7 +200,10 @@ defmodule Measurements.Unit.Parser do
       |> String.replace_prefix("per_gigasecond", "gigahertz")
       |> String.replace_prefix("per_megasecond", "megahertz")
 
-    {String.to_atom(final_acc), s}
+    case final_acc do
+      "" -> {nil, s}
+      final -> {String.to_atom(final), s}
+    end
   end
 
   # REMEMBER to order these by unit priority when naming a derived unit...

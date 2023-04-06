@@ -4,6 +4,12 @@ defmodule Measurements.Unit.ScaleTest do
 
   alias Measurements.Unit.Scale
 
+  import TypeClass
+
+  classtest(Measurements.Multiplicative.Semigroup, for: Scale)
+  classtest(Measurements.Multiplicative.Monoid, for: Scale)
+  classtest(Measurements.Multiplicative.Group, for: Scale)
+
   describe "from_value/2" do
     test "converts value to a scale, while keeping only integers" do
       assert Scale.from_value(42) == %Scale{

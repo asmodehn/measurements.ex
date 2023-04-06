@@ -60,12 +60,12 @@ defclass Measurements.Additive.Group do
   properties do
     def right_inverse(data) do
       a = generate(data)
-      Semigroup.sum(a, Measurements.Additive.Group.inverse(a)) == Monoid.init(a)
+      equal?(Semigroup.sum(a, Measurements.Additive.Group.inverse(a)), Monoid.init(a))
     end
 
     def left_inverse(data) do
       a = generate(data)
-      Semigroup.sum(Measurements.Additive.Group.inverse(a), a) == Monoid.init(a)
+      equal?(Semigroup.sum(Measurements.Additive.Group.inverse(a), a), Monoid.init(a))
     end
 
     # TODO : Abelian ? commutativity ?? or only in linear space.

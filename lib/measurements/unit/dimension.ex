@@ -4,6 +4,7 @@ defmodule Measurements.Unit.Dimension do
   """
 
   alias Measurements.Unit.{
+    None,
     Time,
     Length,
     Mass,
@@ -92,6 +93,17 @@ defmodule Measurements.Unit.Dimension do
   defdelegate delta(d1, d2), to: Measurements.Additive.Group, as: :delta
 
   def module(%__MODULE__{
+        time: 0,
+        length: 0,
+        mass: 0,
+        current: 0,
+        temperature: 0,
+        substance: 0,
+        lintensity: 0
+      }),
+      do: {:ok, None}
+
+  def module(%__MODULE__{
         time: t,
         length: 0,
         mass: 0,
@@ -175,7 +187,7 @@ defmodule Measurements.Unit.Dimension do
       when li != 0,
       do: {:ok, Lintensity}
 
-  def module(%__MODULE__{}), do: Derived
+  def module(%__MODULE__{}), do: {:ok, Derived}
 end
 
 defimpl String.Chars, for: Measurements.Unit.Dimension do

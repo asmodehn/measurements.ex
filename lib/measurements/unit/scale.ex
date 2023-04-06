@@ -16,11 +16,12 @@ defmodule Measurements.Unit.Scale do
   @type t :: %__MODULE__{
           # TODO : rename to :scale
           magnitude: integer,
-          coefficient: float,
+          coefficient: integer | float,
           dimension: Dimension.t()
         }
 
   # coeff defaults to in for precision and simplicity.
+  # Note: here we rely on coefficient as integer to avoid float arithmetic if we can.
   def new(magnitude \\ 0, coefficient \\ 1, dimension \\ %Dimension{}) do
     %__MODULE__{
       magnitude: magnitude,

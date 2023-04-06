@@ -37,20 +37,29 @@ defclass Measurements.Multiplicative.Semigroup do
           Measurements.Multiplicative.Semigroup.product(b, c)
         )
 
-      cond do
-        is_integer(left) or is_float(left) ->
-          equal?(left, right)
-
-        is_map(left) ->
-          # comparing structures via their map, keys and values one by one.
-          Enum.zip(Map.to_list(left), Map.to_list(right))
-          # equal? is needed to avoid problem with float equality...
-          |> Enum.map(fn {{k1, v1}, {k2, v2}} -> k1 == k2 and equal?(v1, v2) end)
-          |> Enum.reduce(true, &(&1 and &2))
-
-        true ->
-          raise RuntimeError, message: "NOT IMPLEMENTED for #{left}"
+      if not equal?(left, right) do
+        IO.inspect("(#{a} * #{b}) * #{c} != #{a} * (#{b} * #{c})")
+        IO.inspect(left)
+        IO.inspect(right)
+        false
+      else
+        true
       end
+
+      # cond do
+      #   is_integer(left) or is_float(left) ->
+      #     equal?(left, right)
+
+      #   is_map(left) ->
+      #     # comparing structures via their map, keys and values one by one.
+      #     Enum.zip(Map.to_list(left), Map.to_list(right))
+      #     # equal? is needed to avoid problem with float equality...
+      #     |> Enum.map(fn {{k1, v1}, {k2, v2}} -> k1 == k2 and equal?(v1, v2) end)
+      #     |> Enum.reduce(true, &(&1 and &2))
+
+      #   true ->
+      #     raise RuntimeError, message: "NOT IMPLEMENTED for #{left}"
+      # end
     end
   end
 end
