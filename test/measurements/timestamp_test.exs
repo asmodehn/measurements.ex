@@ -6,6 +6,10 @@ defmodule Measurements.TimestampTest do
 
   alias Measurements.Timestamp
 
+  import TypeClass
+
+  classtest(Measurements.Additive.Semigroup, for: Timestamp)
+
   alias Measurements.System
   alias Measurements.Node
 

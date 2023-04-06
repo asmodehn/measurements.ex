@@ -3,8 +3,7 @@
 ```elixir
 Mix.install([
   # {:type_class, "~> 1.2"},
-  {:type_class, github: "asmodehn/type_class", branch: "equal_recursive", override: true},
-  {:witchcraft, "~> 1.0"},
+  {:type_class, github: "asmodehn/type_class", branch: "test_macro", override: true},
   {:nimble_parsec, "~> 1.0"},
   {:measurements, path: "."},
   {:vega_lite, "~> 0.1.6"},
@@ -177,7 +176,7 @@ As a specific operation that makes sense on localtime, there is `delta/2` that c
 before = Measurements.Timestamp.now() |> IO.inspect()
 Process.sleep(1000)
 now = Measurements.Timestamp.now() |> IO.inspect()
-Measurements.Timestamp.delta(now, before)
+Measurements.Timestamp.duration(now, before)
 ```
 
 Implicit conversion is also handled, albeit with `System` module directly without relying on `Measurements` features for simplicity.
@@ -188,7 +187,7 @@ Implicit conversion is also handled, albeit with `System` module directly withou
 before = Measurements.Timestamp.now(:millisecond) |> IO.inspect()
 Process.sleep(1000)
 now = Measurements.Timestamp.now(:microsecond) |> IO.inspect()
-Measurements.Timestamp.delta(now, before)
+Measurements.Timestamp.duration(now, before)
 ```
 
 #### Between

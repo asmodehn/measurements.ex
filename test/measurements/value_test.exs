@@ -5,6 +5,10 @@ defmodule Measurements.ValueTest do
   alias Measurements.Value
   alias Measurements.Measurement
 
+  import TypeClass
+
+  classtest(Measurements.Additive.Semigroup, for: Value)
+
   describe "new/2" do
     test "build any type of measurement" do
       assert Value.new(33, :micrometer) == %Value{value: 33, unit: :micrometer}

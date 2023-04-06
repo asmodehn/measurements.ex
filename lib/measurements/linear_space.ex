@@ -4,9 +4,7 @@ defclass Measurements.LinearSpace do
   extend(Measurements.Additive.Group)
   # An abelian group is a group where the operation is commutative
 
-  alias Witchcraft.Monoid
-  alias Witchcraft.Semigroup
-  alias Measurements.Additive
+  alias Measurements.Additive.{Monoid, Semigroup, Group}
 
   where do
     # redefine scale here to allow scaling by a field, not only integers like in additive group.
@@ -18,7 +16,7 @@ defclass Measurements.LinearSpace do
     def commutativity(data) do
       a = generate(data)
       b = generate(data)
-      equal?(Semigroup.append(a, b), Semigroup.append(b, a))
+      equal?(Semigroup.sum(a, b), Semigroup.sum(b, a))
     end
 
     # lets define other linear space properties, even if some are already covered by the additive group definition...
@@ -28,23 +26,23 @@ defclass Measurements.LinearSpace do
       c = generate(data)
 
       equal?(
-        Semigroup.append(a, Semigroup.append(b, c)),
-        Semigroup.append(Semigroup.append(a, b), c)
+        Semigroup.sum(a, Semigroup.sum(b, c)),
+        Semigroup.sum(Semigroup.sum(a, b), c)
       )
     end
 
     def identity(data) do
       a = generate(data)
 
-      equal?(Semigroup.append(a, Monoid.empty(a)), a) and
-        equal?(Semigroup.append(Monoid.empty(a), a), a)
+      equal?(Semigroup.sum(a, Monoid.init(a)), a) and
+        equal?(Semigroup.sum(Monoid.init(a), a), a)
     end
 
     def inverse(data) do
       a = generate(data)
 
-      equal?(Semigroup.append(a, Additive.Group.inverse(a)), Monoid.empty(a)) and
-        equal?(Semigroup.append(Additive.Group.inverse(a), a), Monoid.empty(a))
+      equal?(Semigroup.sum(a, Group.inverse(a)), Monoid.init(a)) and
+        equal?(Semigroup.sum(Group.inverse(a), a), Monoid.init(a))
     end
 
     def compatible_scalar_mult(data) do
@@ -67,11 +65,11 @@ defclass Measurements.LinearSpace do
       b = generate(data)
 
       equal?(
-        Semigroup.append(
+        Semigroup.sum(
           Measurements.LinearSpace.scale(a, 4.2),
           Measurements.LinearSpace.scale(b, 4.2)
         ),
-        Measurements.LinearSpace.scale(Semigroup.append(a, b), 4.2)
+        Measurements.LinearSpace.scale(Semigroup.sum(a, b), 4.2)
       )
     end
 
@@ -80,7 +78,7 @@ defclass Measurements.LinearSpace do
 
       equal?(
         Measurements.LinearSpace.scale(a, 4 + 3.2),
-        Semigroup.append(
+        Semigroup.sum(
           Measurements.LinearSpace.scale(a, 4),
           Measurements.LinearSpace.scale(a, 3.2)
         )

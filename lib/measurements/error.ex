@@ -112,7 +112,7 @@ defmodule Measurements.Error do
       }
 
   """
-  defdelegate sum(e1, e2), to: Witchcraft.Semigroup, as: :append
+  defdelegate sum(e1, e2), to: Measurements.Additive.Semigroup, as: :sum
 
   @doc """
   Scales a measurement by a number.
@@ -131,7 +131,7 @@ defmodule Measurements.Error do
 
   """
   def scale(%__MODULE__{} = e, n) when is_integer(n) do
-    Witchcraft.Semigroup.repeat(e, times: n)
+    Measurements.Additive.Semigroup.scale(e, times: n)
     # new(abs(e.error * n), e.unit)
   end
 end
@@ -167,7 +167,7 @@ end
 #   end
 # end
 
-definst Witchcraft.Semigroup, for: Measurements.Error do
+definst Measurements.Additive.Semigroup, for: Measurements.Error do
   require Measurements.Unit.Time
   require Measurements.Unit.Length
 
@@ -181,7 +181,7 @@ definst Witchcraft.Semigroup, for: Measurements.Error do
     )
   end
 
-  def append(%Measurements.Error{} = e1, %Measurements.Error{} = e2)
+  def sum(%Measurements.Error{} = e1, %Measurements.Error{} = e2)
       when e1.unit == e2.unit do
     # IO.inspect("#{e1} + #{e2} -> ")
     %Measurements.Error{
@@ -190,13 +190,13 @@ definst Witchcraft.Semigroup, for: Measurements.Error do
     }
   end
 
-  def append(%Measurements.Error{} = e1, %Measurements.Error{} = e2) do
+  def sum(%Measurements.Error{} = e1, %Measurements.Error{} = e2) do
     with {^e1, {:ok, s1}} <- {e1, Measurements.Unit.scale(e1.unit)},
          {^e2, {:ok, s2}} <- {e2, Measurements.Unit.scale(e2.unit)} do
       if s1.dimension == s2.dimension do
         e1 = Measurements.Error.convert(e1, e2.unit)
         e2 = Measurements.Error.convert(e2, e1.unit)
-        append(e1, e2)
+        sum(e1, e2)
       else
         raise ArgumentError, message: "#{e1} and #{e2} have incompatible unit dimension"
       end
@@ -204,7 +204,7 @@ definst Witchcraft.Semigroup, for: Measurements.Error do
   end
 end
 
-definst Witchcraft.Monoid, for: Measurements.Error do
+definst Measurements.Additive.Monoid, for: Measurements.Error do
   # Monoid on the same unit !!
-  def empty(e), do: %Measurements.Error{unit: e.unit}
+  def init(e), do: %Measurements.Error{unit: e.unit}
 end

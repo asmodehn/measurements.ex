@@ -6,6 +6,7 @@ defmodule Measurements.MixProject do
       app: :measurements,
       version: "0.1.3",
       elixir: "~> 1.14",
+      # Useful for a lib ? or useless and confusing ?
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
@@ -50,7 +51,7 @@ defmodule Measurements.MixProject do
       # {:type_class, "~> 1.2"},
       # {:type_class, path: "/home/alexv/Projects/elixir-playground/type_class", override: true},
       {:type_class, github: "asmodehn/type_class", branch: "test_macro", override: true},
-      {:witchcraft, "~> 1.0"},
+      # {:witchcraft, "~> 1.0"},
       # {:witchcraft, path: "/home/alexv/Projects/elixir-playground/witchcraft", override: true},
       {:nimble_parsec, "~> 1.0"},
 
