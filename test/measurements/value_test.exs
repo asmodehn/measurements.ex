@@ -13,11 +13,13 @@ defmodule Measurements.ValueTest do
     test "build any type of measurement" do
       assert Value.new(33, :micrometer) == %Value{value: 33, unit: :micrometer}
       assert Value.new(42, :millisecond) == %Value{value: 42, unit: :millisecond}
+      assert Value.new(51, nil) == %Value{value: 51, unit: nil}
     end
 
     test "supports aliases" do
       assert Value.new(33, :micrometers) == %Value{value: 33, unit: :micrometer}
       assert Value.new(42, :milliseconds) == %Value{value: 42, unit: :millisecond}
+      assert Value.new(51) == %Value{value: 51}
     end
 
     test "supports extra argument for errors" do
@@ -30,6 +32,12 @@ defmodule Measurements.ValueTest do
       assert Value.new(42, :millisecond, 2) == %Value{
                value: 42,
                unit: :millisecond,
+               error: 2
+             }
+
+      assert Value.new(42, nil, 2) == %Value{
+               value: 42,
+               unit: nil,
                error: 2
              }
     end
@@ -103,6 +111,12 @@ defmodule Measurements.ValueTest do
       assert_raise(ArgumentError, fn ->
         Value.new(42, :second)
         |> Value.sum(Value.new(51, :meter))
+      end)
+
+      # also true for unitless value
+      assert_raise(ArgumentError, fn ->
+        Value.new(42, :second)
+        |> Value.sum(Value.new(51))
       end)
     end
   end

@@ -39,6 +39,30 @@ defmodule Measurements.Unit.Dimension do
     %__MODULE__{}
   end
 
+  require ExUnitProperties
+
+  def generator() do
+    ExUnitProperties.gen all(
+                           time <- StreamData.integer(),
+                           length <- StreamData.integer(),
+                           mass <- StreamData.integer(),
+                           current <- StreamData.integer(),
+                           temperature <- StreamData.integer(),
+                           substance <- StreamData.integer(),
+                           lintensity <- StreamData.integer()
+                         ) do
+      %__MODULE__{
+        time: time,
+        length: length,
+        mass: mass,
+        current: current,
+        temperature: temperature,
+        substance: substance,
+        lintensity: lintensity
+      }
+    end
+  end
+
   def with_time(%__MODULE__{} = d, n) do
     %{d | time: d.time + n}
   end

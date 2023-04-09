@@ -60,27 +60,27 @@ defclass Measurements.Multiplicative.Group do
       a = generate(data)
       # |> IO.inspect()
       maybe_init = Semigroup.product(a, Measurements.Multiplicative.Group.inverse(a))
+      equal?(maybe_init, Monoid.init(a))
+      # cond do
+      #   is_number(maybe_init) ->
+      #     equal?(maybe_init, Monoid.init(a))
 
-      cond do
-        is_integer(maybe_init) or is_float(maybe_init) ->
-          equal?(maybe_init, Monoid.init(a))
+      #   is_map(maybe_init) ->
+      #     # IO.inspect(maybe_init)
+      #     # comparing structures via their map, keys and values one by one.
+      #     Enum.zip(Map.to_list(maybe_init), Map.to_list(Monoid.init(a)))
+      #     # |> IO.inspect()
+      #     # equal? is needed to avoid problem with float equality...
+      #     |> Enum.map(fn {{k1, v1}, {k2, v2}} -> k1 == k2 and equal?(v1, v2) end)
+      #     # |> IO.inspect()
+      #     |> Enum.reduce(true, &(&1 and &2))
 
-        is_map(maybe_init) ->
-          # IO.inspect(maybe_init)
-          # comparing structures via their map, keys and values one by one.
-          Enum.zip(Map.to_list(maybe_init), Map.to_list(Monoid.init(a)))
-          # |> IO.inspect()
-          # equal? is needed to avoid problem with float equality...
-          |> Enum.map(fn {{k1, v1}, {k2, v2}} -> k1 == k2 and equal?(v1, v2) end)
-          # |> IO.inspect()
-          |> Enum.reduce(true, &(&1 and &2))
+      #   # |> IO.inspect()
 
-        # |> IO.inspect()
-
-        true ->
-          # IO.inspect("DEFAULT CASE")
-          raise RuntimeError, message: "NOT IMPLEMENTED for #{maybe_init}"
-      end
+      #   true ->
+      #     # IO.inspect("DEFAULT CASE")
+      #     raise RuntimeError, message: "NOT IMPLEMENTED for #{maybe_init}"
+      # end
     end
 
     def left_inverse(data) do
@@ -88,26 +88,27 @@ defclass Measurements.Multiplicative.Group do
       # |> IO.inspect() 
       maybe_init = Semigroup.product(Measurements.Multiplicative.Group.inverse(a), a)
 
-      cond do
-        is_integer(maybe_init) or is_float(maybe_init) ->
-          equal?(maybe_init, Monoid.init(a))
+      equal?(maybe_init, Monoid.init(a))
+      # cond do
+      #   is_number(maybe_init) ->
+      #     equal?(maybe_init, Monoid.init(a))
 
-        is_map(maybe_init) ->
-          # IO.inspect(maybe_init)
-          # comparing structures via their map, keys and values one by one.
-          Enum.zip(Map.to_list(maybe_init), Map.to_list(Monoid.init(a)))
-          # |> IO.inspect()
-          # equal? is needed to avoid problem with float equality...
-          |> Enum.map(fn {{k1, v1}, {k2, v2}} -> k1 == k2 and equal?(v1, v2) end)
-          # |> IO.inspect()
-          |> Enum.reduce(true, &(&1 and &2))
+      #   is_map(maybe_init) ->
+      #     # IO.inspect(maybe_init)
+      #     # comparing structures via their map, keys and values one by one.
+      #     Enum.zip(Map.to_list(maybe_init), Map.to_list(Monoid.init(a)))
+      #     # |> IO.inspect()
+      #     # equal? is needed to avoid problem with float equality...
+      #     |> Enum.map(fn {{k1, v1}, {k2, v2}} -> k1 == k2 and equal?(v1, v2) end)
+      #     # |> IO.inspect()
+      #     |> Enum.reduce(true, &(&1 and &2))
 
-        # |> IO.inspect()
+      #   # |> IO.inspect()
 
-        true ->
-          # IO.inspect("DEFAULT CASE")
-          raise RuntimeError, message: "NOT IMPLEMENTED for #{maybe_init}"
-      end
+      #   true ->
+      #     # IO.inspect("DEFAULT CASE")
+      #     raise RuntimeError, message: "NOT IMPLEMENTED for #{maybe_init}"
+      # end
     end
 
     # TODO : abelian => commutativity ?

@@ -7,7 +7,7 @@ defmodule Measurements.Value do
   alias Measurements.Unit
   alias Measurements.Measurement
 
-  @enforce_keys [:value, :unit]
+  @enforce_keys [:value]
   defstruct value: nil,
             unit: nil,
             error: 0
@@ -55,7 +55,7 @@ defmodule Measurements.Value do
   """
   @spec new(integer, Unit.t()) :: t
   @spec new(integer, Unit.t(), integer) :: t
-  def new(v, unit, err \\ 0) do
+  def new(v, unit \\ nil, err \\ 0) do
     # normalize the unit
     case Unit.new(unit) do
       # TODO : while new/2 seems the more intuitive approach, 

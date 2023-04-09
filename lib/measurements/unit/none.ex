@@ -6,6 +6,9 @@ defmodule Measurements.Unit.None do
   alias Measurements.Unit.Dimension
   alias Measurements.Unit.Scale
   alias Measurements.Unit.Parser
+  alias Measurements.Unit.Rational
+
+  import Measurements.Unit.Rational, only: [rational_one: 0]
 
   alias Measurements.Unit.Scalable
   alias Measurements.Unit.Unitable
@@ -31,7 +34,7 @@ defmodule Measurements.Unit.None do
   @spec unit(Scale.t()) :: {:ok, atom} | {:error, fun, atom}
   def unit(
         %Scale{
-          coefficient: 1,
+          coefficient: rational_one(),
           dimension: %Dimension{
             time: 0,
             length: 0,

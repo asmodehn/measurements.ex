@@ -53,6 +53,7 @@ defmodule Measurements.MixProject do
       {:type_class, github: "asmodehn/type_class", branch: "test_macro", override: true},
       # {:witchcraft, "~> 1.0"},
       # {:witchcraft, path: "/home/alexv/Projects/elixir-playground/witchcraft", override: true},
+      {:stream_data, "~> 0.5", only: :test},
       {:nimble_parsec, "~> 1.0"},
 
       # For tests
