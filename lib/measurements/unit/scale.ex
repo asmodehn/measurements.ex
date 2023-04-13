@@ -8,11 +8,10 @@ defmodule Measurements.Unit.Scale do
   alias Measurements.Unit.Dimension
   alias Measurements.Unit.Rational
 
-  import Measurements.Unit.Rational,
-    only: [is_rational: 1, is_rational_invertible: 1, rational_one: 0]
+  use Measurements.Unit.Rational
 
   defstruct magnitude: 0,
-            coefficient: rational_one(),
+            coefficient: %Rational{},
             dimension: %Dimension{}
 
   @typedoc "Scale Type"
@@ -23,6 +22,7 @@ defmodule Measurements.Unit.Scale do
           dimension: Dimension.t()
         }
 
+  # TODO : make it always invertible by forbidding 0.
   defguard is_scale_invertible(s) when is_rational_invertible(s.coefficient)
 
   # coeff defaults to in for precision and simplicity.
