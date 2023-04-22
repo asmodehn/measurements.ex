@@ -16,7 +16,7 @@ defmodule Class.Dependency do
   @spec set_up() :: ast()
   defmacro set_up do
     quote do
-      import TypeClass.Utility.Attribute
+      import Class.Utility.Attribute
       register(:extend, accumulate: true)
     end
   end

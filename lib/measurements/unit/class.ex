@@ -20,7 +20,7 @@ defmodule Class do
         # import TypeClass.Property.Generator, only: [generate: 1]
         # import TypeClass.Property.Generator.Custom
 
-        # require TypeClass.Property
+        require Class.Property
 
         use Class.Dependency
 
@@ -37,7 +37,7 @@ defmodule Class do
 
         Class.run_where!()
         Class.Dependency.run()
-        # TypeClass.Property.ensure!()  # Really needed ?
+        Class.Property.ensure!()
       end
     end
   end
@@ -209,8 +209,8 @@ defmodule Class do
               property.__info__(:functions)
               |> Enum.filter(fn
                 {n, a} -> not String.starts_with?(Atom.to_string(n), "__")
-              end)
-              |> IO.inspect() do
+              end)  # |> IO.inspect()
+          do
           t = ExUnit.Case.register_test(__MODULE__, env_file, env_line, :classtest, prop_name, [])
 
           def unquote(t)(_) do

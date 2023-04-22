@@ -1,3 +1,6 @@
+
+import Class
+
 defmodule Measurements.Unit.Rational do
   @moduledoc """
   Implementing exact rational computation.
@@ -71,12 +74,13 @@ defmodule Measurements.Unit.Rational do
     %__MODULE__{num: num, den: den} |> rational()
   end
 
-  require ExUnitProperties
 
-  @behaviour Class.Struct
+  @behaviour Class.Setoid
 
-  @impl Class.Struct
+  @impl Class.Setoid
   def generator() do
+
+    require ExUnitProperties
     ExUnitProperties.gen all(
                            denominator <- StreamData.positive_integer(),
                            denominator != 0,
@@ -84,6 +88,33 @@ defmodule Measurements.Unit.Rational do
                          ) do
       rational(numerator, denominator)
     end
+  end
+
+  @impl Class.Setoid
+  def equal?(%__MODULE__{} = left, %__MODULE__{} = right) do
+    l = left |> rational()
+    r = right |> rational()
+    # rely on integer exact equality
+    numerator(l) === numerator(r) and
+      denominator(l) === denominator(r)
+  end
+
+  # Extra equality with comparable base types...
+  @spec equal?(t(), integer()) :: boolean()
+  def equal?(%__MODULE__{} = left, right) when is_integer(right) do
+    # use the most restrictive equality by converting number to rational
+    equal?(left, rational(right))  # |> IO.inspect()
+  end
+
+  @spec equal?(t(), float()) :: boolean()
+  def equal?(%__MODULE__{} = left, right) when is_float(right) do
+    # Note that float might give unexpected result...
+    equal?(left, from_float(right))  # |> IO.inspect()
+  end
+
+  # for symmetry with integer and float
+  def equal?(left, %__MODULE__{} = right) when is_float(left) when is_integer(left) do
+    equal?(right, left)
   end
 
   # @spec perturbate(t(), integer()) :: t()
@@ -165,32 +196,20 @@ defmodule Measurements.Unit.Rational do
   end
 end
 
-import Class
-
-definst EqType, for: Measurements.Unit.Rational do
-  use Measurements.Unit.Rational
-
-  @spec equal?(Rational.t(), Rational.t()) :: boolean()
-  def equal?(%Rational{} = left, %Rational{} = right) do
-    l = left |> Rational.rational()
-    r = right |> Rational.rational()
-    # rely on integer exact equality
-    Rational.numerator(l) === Rational.numerator(r) and
-      Rational.denominator(l) === Rational.denominator(r)
-  end
-
-  @spec equal?(Rational.t(), integer()) :: boolean()
-  def equal?(%Rational{} = left, right) when is_integer(right) do
-    # use the most restrictive equality by converting number to rational
-    equal?(left, Rational.rational(right)) |> IO.inspect()
-  end
-
-  @spec equal?(Rational.t(), float()) :: boolean()
-  def equal?(%Rational{} = left, right) when is_float(right) do
-    # Note that float might give unexpected result...
-    equal?(left, Rational.from_float(right)) |> IO.inspect()
-  end
+definst Class.Setoid, for: Measurements.Unit.Rational do
+  defdelegate equal?(left, right), to: Measurements.Unit.Rational, as: :equal?
 end
+definst Class.Semigroupoid, for: Measurements.Unit.Rational do
+  defdelegate product(left, right), to: Measurements.Unit.Rational, as: :product
+end
+definst Class.Category, for: Measurements.Unit.Rational do
+  defdelegate init(a), to: Measurements.Unit.Rational, as: :rational
+end
+# TODO : custom generator to exclude 0 in tests here...
+# definst Class.Groupoid, for: Measurements.Unit.Rational do
+#   defdelegate inverse(a), to: Measurements.Unit.Rational, as: :inverse
+# end
+
 
 defimpl String.Chars, for: Measurements.Unit.Rational do
   use Measurements.Unit.Rational

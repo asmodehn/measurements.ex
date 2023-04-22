@@ -1,18 +1,26 @@
 import Class
 
-defclass EqType do
+defclass Class.Setoid do
   # TODO : defclass as per https://en.wikipedia.org/wiki/Class_(set_theory)
   # => very similar to typeclass (same ? )
   # => Equivalence classes, in the sense of Scott ?
   # (cf. Scott domain semantics of lambda calculus sharing similarities with powersets)
 
+  # generic type to be refined in module importing class
   @type t() :: any()
   # TODO : type that can be refined by implementation ??? 
+
+  # TODO : typed_struct would be useful here...
+
+  # callback to implement in the module defining the struct (internal data)
+  @callback generator() :: t()
+
+  @callback equal?(t(), t()) :: boolean()
 
   # functions for the protocol
   where do
     @doc "Check if two values are equal"
-    @spec equal?(t(), any()) :: boolean()
+    @spec equal?(t(), t()) :: boolean()
     # which of derive or fallback is better ??
     @fallback_to_any true
     def equal?(a, b)
@@ -24,7 +32,7 @@ defclass EqType do
 
     property "equal?/2 is symmetric", %{module: module} do
       check all(r <- module.generator()) do
-        assert EqType.equal?(r, r)
+        assert Class.Setoid.equal?(r, r)
       end
     end
 
@@ -33,7 +41,7 @@ defclass EqType do
               a <- module.generator(),
               b <- module.generator()
             ) do
-        assert EqType.equal?(a, b) === EqType.equal?(b, a)
+        assert  Class.Setoid.equal?(a, b) ===  Class.Setoid.equal?(b, a)
       end
     end
 
@@ -46,9 +54,9 @@ defclass EqType do
             ) do
         # ap <- integer(),
         # cp <- integer() do
-        # 	a = Rational.perturbate(b, ap)
-        # 	c = Rational.perturbate(b, ac)
-        assert not (EqType.equal?(a, b) and EqType.equal?(b, c) and not EqType.equal?(a, c))
+        #   a = Rational.perturbate(b, ap)
+        #   c = Rational.perturbate(b, ac)
+        assert not ( Class.Setoid.equal?(a, b) and  Class.Setoid.equal?(b, c) and not  Class.Setoid.equal?(a, c))
       end
     end
   end
@@ -56,20 +64,11 @@ defclass EqType do
   # TODO: defrel to define a relationship(optimized binary function call...)
 end
 
-definst EqType, for: Any do
+definst Class.Setoid, for: Any do
   def equal?(a, b) do
-    # End up here ? try symmetric call !
-    # -> single dispatch on b this time
-    # => providing symmetry without having to reimplement it for other types
-    # => we rely on symmetric property tests to find eventual problems with it.
-    try do
-      EqType.equal?(b, a)
-    rescue
-      # rescue *ANY* error (depending on user's implementation of equal?/2)
-      # by relying on elixir equal comparison (or strict better ??)
-      # TODO : better way via macro to implement equal?/2 ???
-      _ -> a == b
-    end
+      # default relying on elixir's core equality
+      # TODO: is sometimes the type's equal?/2 better ??
+      a == b
   end
 end
 

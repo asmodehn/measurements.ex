@@ -17,19 +17,19 @@ defmodule Measurement.Unit.RationalTest do
 
   describe "equal?/2" do
     test "check strict equality of two rationals" do
-      assert EqType.equal?(Rational.rational(42, 10), Rational.rational(420, 100))
+      assert Rational.equal?(Rational.rational(42, 10), Rational.rational(420, 100))
     end
 
     test "check strit equality of internal representation of two rationals" do
-      assert EqType.equal?(%Rational{num: 42, den: 10}, %Rational{num: 420, den: 100})
+      assert Rational.equal?(%Rational{num: 42, den: 10}, %Rational{num: 420, den: 100})
     end
 
     @tag :mememe
     test "check equality if either is a number" do
-      assert EqType.equal?(1, Rational.rational(1))
-      assert EqType.equal?(1.0, Rational.rational(1))
-      assert EqType.equal?(Rational.rational(1), 1)
-      assert EqType.equal?(Rational.rational(1), 1.0)
+      assert Rational.equal?(1, Rational.rational(1))
+      assert Rational.equal?(1.0, Rational.rational(1))
+      assert Rational.equal?(Rational.rational(1), 1)
+      assert Rational.equal?(Rational.rational(1), 1.0)
     end
   end
 
@@ -43,7 +43,11 @@ defmodule Measurement.Unit.RationalTest do
 
   import Class
 
-  classtest(EqType, for: Rational)
+  classtest(Class.Setoid, for: Rational)
+  classtest(Class.Semigroupoid, for: Rational)
+  classtest(Class.Category, for: Rational)
+  # TODO : enable, currently failing on 0/1
+  # classtest(Class.Groupoid, for: Rational)
 
   # => Rational is a Setoid  => HOW TO express in test/code ??
 
@@ -58,7 +62,7 @@ defmodule Measurement.Unit.RationalTest do
     test "creates a rational number, similar to the float, but not always equal !" do
       r = Rational.from_float(4.2)
       # not exactly same !
-      assert not EqType.equal?(r, %Rational{num: 42, den: 10})
+      assert not Class.Setoid.equal?(r, %Rational{num: 42, den: 10})
     end
   end
 
@@ -88,14 +92,14 @@ defmodule Measurement.Unit.RationalTest do
 
   describe "product/2" do
     test "computes the usual product of rational, as a rational" do
-      assert EqType.equal?(
+      assert Rational.equal?(
                Rational.product(Rational.rational(42, 100), Rational.rational(33, 20)),
                Rational.rational(42 * 33, 100 * 20)
              )
     end
 
     test "also accepts integer, as a rational" do
-      assert EqType.equal?(
+      assert Rational.equal?(
                Rational.product(Rational.rational(42, 10), 33),
                Rational.rational(1386, 10)
              )
@@ -108,7 +112,7 @@ defmodule Measurement.Unit.RationalTest do
             b <- Rational.generator(),
             c <- Rational.generator()
           ) do
-      EqType.equal?(
+      Rational.equal?(
         Rational.product(Rational.product(a, b), c),
         Rational.product(a, Rational.product(b, c))
       )
@@ -119,13 +123,13 @@ defmodule Measurement.Unit.RationalTest do
 
   property "product/2 accepts default as right identity element" do
     check all(a <- Rational.generator()) do
-      assert EqType.equal?(Rational.product(%Rational{}, a), a)
+      assert Rational.equal?(Rational.product(%Rational{}, a), a)
     end
   end
 
   property "product/2 accepts default as left identity element" do
     check all(a <- Rational.generator()) do
-      assert EqType.equal?(Rational.product(a, %Rational{}), a)
+      assert Rational.equal?(Rational.product(a, %Rational{}), a)
     end
   end
 
@@ -136,7 +140,7 @@ defmodule Measurement.Unit.RationalTest do
             r <- Rational.generator(),
             Rational.is_rational_invertible(r)
           ) do
-      assert EqType.equal?(
+      assert Rational.equal?(
                Rational.product(r, Rational.inverse(r)),
                %Rational{}
              )
@@ -148,7 +152,7 @@ defmodule Measurement.Unit.RationalTest do
             r <- Rational.generator(),
             Rational.is_rational_invertible(r)
           ) do
-      assert EqType.equal?(
+      assert Rational.equal?(
                Rational.product(Rational.inverse(r), r),
                %Rational{}
              )
