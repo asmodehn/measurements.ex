@@ -23,43 +23,36 @@ defclass Class.Category do
   def init?(monoid), do: init(monoid) == monoid
 
   properties do
-
     use ExUnit.Case
     use ExUnitProperties
 
     property "init/1 is left_identity", %{module: module} do
-      check all(
-        a <- module.generator()
-        ) do
-
-      if is_function(a) do
-        Class.Setoid.equal?(
-          Class.Semigroupoid.product(Class.Category.init(a), a).("foo"),
-          a.("foo")
-        )
-      else
-        Class.Setoid.equal?(
-          Class.Semigroupoid.product(Class.Category.init(a), a),
-          a
-        )
+      check all(a <- module.generator()) do
+        if is_function(a) do
+          Class.Setoid.equal?(
+            Class.Semigroupoid.product(Class.Category.init(a), a).("foo"),
+            a.("foo")
+          )
+        else
+          Class.Setoid.equal?(
+            Class.Semigroupoid.product(Class.Category.init(a), a),
+            a
+          )
+        end
       end
-    end
     end
 
     property "init/1 is right_identity", %{module: module} do
-      check all(
-        a <- module.generator()
-        ) do
-
-      if is_function(a) do
-        Class.Setoid.equal?(
-          Class.Semigroupoid.product(a, Class.Category.init(a)).("foo"),
-          a.("foo")
-        )
-      else
-        Class.Setoid.equal?(Class.Semigroupoid.product(a, Class.Category.init(a)), a)
+      check all(a <- module.generator()) do
+        if is_function(a) do
+          Class.Setoid.equal?(
+            Class.Semigroupoid.product(a, Class.Category.init(a)).("foo"),
+            a.("foo")
+          )
+        else
+          Class.Setoid.equal?(Class.Semigroupoid.product(a, Class.Category.init(a)), a)
+        end
       end
-    end
     end
   end
 end

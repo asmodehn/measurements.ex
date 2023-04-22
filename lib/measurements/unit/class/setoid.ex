@@ -41,7 +41,7 @@ defclass Class.Setoid do
               a <- module.generator(),
               b <- module.generator()
             ) do
-        assert  Class.Setoid.equal?(a, b) ===  Class.Setoid.equal?(b, a)
+        assert Class.Setoid.equal?(a, b) === Class.Setoid.equal?(b, a)
       end
     end
 
@@ -56,7 +56,8 @@ defclass Class.Setoid do
         # cp <- integer() do
         #   a = Rational.perturbate(b, ap)
         #   c = Rational.perturbate(b, ac)
-        assert not ( Class.Setoid.equal?(a, b) and  Class.Setoid.equal?(b, c) and not  Class.Setoid.equal?(a, c))
+        assert not (Class.Setoid.equal?(a, b) and Class.Setoid.equal?(b, c) and
+                      not Class.Setoid.equal?(a, c))
       end
     end
   end
@@ -66,9 +67,9 @@ end
 
 definst Class.Setoid, for: Any do
   def equal?(a, b) do
-      # default relying on elixir's core equality
-      # TODO: is sometimes the type's equal?/2 better ??
-      a == b
+    # default relying on elixir's core equality
+    # TODO: is sometimes the type's equal?/2 better ??
+    a == b
   end
 end
 

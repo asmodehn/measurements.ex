@@ -54,73 +54,66 @@ defclass Class.Groupoid do
   end
 
   properties do
-
     use ExUnit.Case
     use ExUnitProperties
 
     property "inverse/1 is right_inverse", %{module: module} do
-        check all(
-          a <- module.generator()
-        ) do
+      check all(a <- module.generator()) do
+        # TODO : custom generator to avoid 0 !!!!
 
-          # TODO : custom generator to avoid 0 !!!!
+        # |> IO.inspect()
+        maybe_init = Class.Semigroupoid.product(a, Class.Groupoid.inverse(a))
+        Class.Setoid.equal?(maybe_init, Class.Category.init(a))
+        # cond do
+        #   is_number(maybe_init) ->
+        #     equal?(maybe_init, Monoid.init(a))
 
-      # |> IO.inspect()
-      maybe_init = Class.Semigroupoid.product(a, Class.Groupoid.inverse(a))
-      Class.Setoid.equal?(maybe_init, Class.Category.init(a))
-      # cond do
-      #   is_number(maybe_init) ->
-      #     equal?(maybe_init, Monoid.init(a))
+        #   is_map(maybe_init) ->
+        #     # IO.inspect(maybe_init)
+        #     # comparing structures via their map, keys and values one by one.
+        #     Enum.zip(Map.to_list(maybe_init), Map.to_list(Monoid.init(a)))
+        #     # |> IO.inspect()
+        #     # equal? is needed to avoid problem with float equality...
+        #     |> Enum.map(fn {{k1, v1}, {k2, v2}} -> k1 == k2 and equal?(v1, v2) end)
+        #     # |> IO.inspect()
+        #     |> Enum.reduce(true, &(&1 and &2))
 
-      #   is_map(maybe_init) ->
-      #     # IO.inspect(maybe_init)
-      #     # comparing structures via their map, keys and values one by one.
-      #     Enum.zip(Map.to_list(maybe_init), Map.to_list(Monoid.init(a)))
-      #     # |> IO.inspect()
-      #     # equal? is needed to avoid problem with float equality...
-      #     |> Enum.map(fn {{k1, v1}, {k2, v2}} -> k1 == k2 and equal?(v1, v2) end)
-      #     # |> IO.inspect()
-      #     |> Enum.reduce(true, &(&1 and &2))
+        #   # |> IO.inspect()
 
-      #   # |> IO.inspect()
-
-      #   true ->
-      #     # IO.inspect("DEFAULT CASE")
-      #     raise RuntimeError, message: "NOT IMPLEMENTED for #{maybe_init}"
-      # end
+        #   true ->
+        #     # IO.inspect("DEFAULT CASE")
+        #     raise RuntimeError, message: "NOT IMPLEMENTED for #{maybe_init}"
+        # end
+      end
     end
-  end
 
     property "inverse/1 is left_inverse", %{module: module} do
-      check all(
-        a <- module.generator()
-      ) do
+      check all(a <- module.generator()) do
+        # |> IO.inspect() 
+        maybe_init = Class.Semigroupoid.product(Class.Groupoid.inverse(a), a)
+        Class.Setoid.equal?(maybe_init, Class.Category.init(a))
+        # cond do
+        #   is_number(maybe_init) ->
+        #     equal?(maybe_init, Monoid.init(a))
 
-      # |> IO.inspect() 
-      maybe_init = Class.Semigroupoid.product(Class.Groupoid.inverse(a), a)
-      Class.Setoid.equal?(maybe_init, Class.Category.init(a))
-      # cond do
-      #   is_number(maybe_init) ->
-      #     equal?(maybe_init, Monoid.init(a))
+        #   is_map(maybe_init) ->
+        #     # IO.inspect(maybe_init)
+        #     # comparing structures via their map, keys and values one by one.
+        #     Enum.zip(Map.to_list(maybe_init), Map.to_list(Monoid.init(a)))
+        #     # |> IO.inspect()
+        #     # equal? is needed to avoid problem with float equality...
+        #     |> Enum.map(fn {{k1, v1}, {k2, v2}} -> k1 == k2 and equal?(v1, v2) end)
+        #     # |> IO.inspect()
+        #     |> Enum.reduce(true, &(&1 and &2))
 
-      #   is_map(maybe_init) ->
-      #     # IO.inspect(maybe_init)
-      #     # comparing structures via their map, keys and values one by one.
-      #     Enum.zip(Map.to_list(maybe_init), Map.to_list(Monoid.init(a)))
-      #     # |> IO.inspect()
-      #     # equal? is needed to avoid problem with float equality...
-      #     |> Enum.map(fn {{k1, v1}, {k2, v2}} -> k1 == k2 and equal?(v1, v2) end)
-      #     # |> IO.inspect()
-      #     |> Enum.reduce(true, &(&1 and &2))
+        #   # |> IO.inspect()
 
-      #   # |> IO.inspect()
-
-      #   true ->
-      #     # IO.inspect("DEFAULT CASE")
-      #     raise RuntimeError, message: "NOT IMPLEMENTED for #{maybe_init}"
-      # end
+        #   true ->
+        #     # IO.inspect("DEFAULT CASE")
+        #     raise RuntimeError, message: "NOT IMPLEMENTED for #{maybe_init}"
+        # end
+      end
     end
-  end
 
     # TODO : abelian => commutativity ?
   end

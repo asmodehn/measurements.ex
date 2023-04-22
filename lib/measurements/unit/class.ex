@@ -205,12 +205,12 @@ defmodule Class do
             ] do
         property = Module.concat([class, Property])
 
+        # |> IO.inspect()
         for {prop_name, one} <-
               property.__info__(:functions)
               |> Enum.filter(fn
                 {n, a} -> not String.starts_with?(Atom.to_string(n), "__")
-              end)  # |> IO.inspect()
-          do
+              end) do
           t = ExUnit.Case.register_test(__MODULE__, env_file, env_line, :classtest, prop_name, [])
 
           def unquote(t)(_) do

@@ -1,4 +1,3 @@
-
 import Class
 
 defmodule Measurements.Unit.Rational do
@@ -74,13 +73,12 @@ defmodule Measurements.Unit.Rational do
     %__MODULE__{num: num, den: den} |> rational()
   end
 
-
   @behaviour Class.Setoid
 
   @impl Class.Setoid
   def generator() do
-
     require ExUnitProperties
+
     ExUnitProperties.gen all(
                            denominator <- StreamData.positive_integer(),
                            denominator != 0,
@@ -103,13 +101,15 @@ defmodule Measurements.Unit.Rational do
   @spec equal?(t(), integer()) :: boolean()
   def equal?(%__MODULE__{} = left, right) when is_integer(right) do
     # use the most restrictive equality by converting number to rational
-    equal?(left, rational(right))  # |> IO.inspect()
+    # |> IO.inspect()
+    equal?(left, rational(right))
   end
 
   @spec equal?(t(), float()) :: boolean()
   def equal?(%__MODULE__{} = left, right) when is_float(right) do
     # Note that float might give unexpected result...
-    equal?(left, from_float(right))  # |> IO.inspect()
+    # |> IO.inspect()
+    equal?(left, from_float(right))
   end
 
   # for symmetry with integer and float
@@ -199,17 +199,19 @@ end
 definst Class.Setoid, for: Measurements.Unit.Rational do
   defdelegate equal?(left, right), to: Measurements.Unit.Rational, as: :equal?
 end
+
 definst Class.Semigroupoid, for: Measurements.Unit.Rational do
   defdelegate product(left, right), to: Measurements.Unit.Rational, as: :product
 end
+
 definst Class.Category, for: Measurements.Unit.Rational do
   defdelegate init(a), to: Measurements.Unit.Rational, as: :rational
 end
+
 # TODO : custom generator to exclude 0 in tests here...
 # definst Class.Groupoid, for: Measurements.Unit.Rational do
 #   defdelegate inverse(a), to: Measurements.Unit.Rational, as: :inverse
 # end
-
 
 defimpl String.Chars, for: Measurements.Unit.Rational do
   use Measurements.Unit.Rational

@@ -60,7 +60,7 @@ defmodule Measurements.Unit.Scale do
   end
 
   def prod(%Measurements.Unit.Scale{} = d1, %Measurements.Unit.Scale{} = d2) do
-    dim = Measurements.Unit.Dimension.sum(d1.dimension, d2.dimension)
+    dim = Measurements.Unit.Dimension.product(d1.dimension, d2.dimension)
     coef = Rational.product(d1.coefficient, d2.coefficient)
 
     %Measurements.Unit.Scale{
@@ -73,9 +73,9 @@ defmodule Measurements.Unit.Scale do
   def ratio(%Measurements.Unit.Scale{} = d1, %Measurements.Unit.Scale{} = d2) do
     # there is no diff for dimensions (not a group ?)
     dim =
-      Measurements.Unit.Dimension.sum(
+      Measurements.Unit.Dimension.product(
         d1.dimension,
-        Measurements.Unit.Dimension.opposite(d2.dimension)
+        Measurements.Unit.Dimension.inverse(d2.dimension)
       )
 
     coef = Rational.ratio(d1.coefficient, d2.coefficient)

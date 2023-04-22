@@ -1,7 +1,6 @@
 defmodule Class.Property do
   @moduledoc "A *very* simple prop checker"
 
-
   defmodule UndefinedError do
     @moduledoc ~S"""
     Warning if a type class is missing properties.
@@ -44,7 +43,6 @@ defmodule Class.Property do
     end
   end
 
-
   @doc "Ensure that the type class has defined properties"
   @spec ensure!() :: no_return()
   defmacro ensure! do
@@ -83,5 +81,4 @@ defmodule Class.Property do
   #   |> Stream.repeatedly()
   #   |> Enum.take(times)
   # end
-
 end

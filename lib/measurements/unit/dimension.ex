@@ -91,7 +91,7 @@ defmodule Measurements.Unit.Dimension do
     %{d | lintensity: d.lintensity + n}
   end
 
-  def sum(%Measurements.Unit.Dimension{} = d1, %Measurements.Unit.Dimension{} = d2) do
+  def product(%Measurements.Unit.Dimension{} = d1, %Measurements.Unit.Dimension{} = d2) do
     %Measurements.Unit.Dimension{
       time: d1.time + d2.time,
       length: d1.length + d2.length,
@@ -103,7 +103,7 @@ defmodule Measurements.Unit.Dimension do
     }
   end
 
-  def opposite(%Measurements.Unit.Dimension{} = d) do
+  def inverse(%Measurements.Unit.Dimension{} = d) do
     d
     |> Map.update!(:time, &(-&1))
     |> Map.update!(:length, &(-&1))
@@ -248,18 +248,18 @@ defimpl TypeClass.Property.Generator, for: Measurements.Unit.Dimension do
       |> Measurements.Unit.Dimension.with_lintensity(Enum.random(-3..3))
 end
 
-import TypeClass
+import Class
 
-definst Measurements.Additive.Semigroup, for: Measurements.Unit.Dimension do
-  defdelegate sum(d1, d2), to: Measurements.Unit.Dimension, as: :sum
+definst Class.Semigroupoid, for: Measurements.Unit.Dimension do
+  defdelegate product(d1, d2), to: Measurements.Unit.Dimension, as: :product
 end
 
-definst Measurements.Additive.Monoid, for: Measurements.Unit.Dimension do
+definst Class.Category, for: Measurements.Unit.Dimension do
   def init(_d) do
     Measurements.Unit.Dimension.new()
   end
 end
 
-definst Measurements.Additive.Group, for: Measurements.Unit.Dimension do
-  defdelegate inverse(d), to: Measurements.Unit.Dimension, as: :opposite
+definst Class.Groupoid, for: Measurements.Unit.Dimension do
+  defdelegate inverse(d), to: Measurements.Unit.Dimension, as: :inverse
 end

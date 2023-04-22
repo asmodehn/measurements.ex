@@ -23,28 +23,26 @@ defclass Class.Semigroupoid do
   end
 
   properties do
-
     use ExUnit.Case
     use ExUnitProperties
 
     property "product/2 is associative", %{module: module} do
       check all(
-        a <- module.generator(),
-        b <- module.generator(),
-        c <- module.generator()
-        ) do
+              a <- module.generator(),
+              b <- module.generator(),
+              c <- module.generator()
+            ) do
+        left =
+          Class.Semigroupoid.product(a, b)
+          |> Class.Semigroupoid.product(c)
 
-      left =
-        Class.Semigroupoid.product(a, b)
-        |> Class.Semigroupoid.product(c)
+        right =
+          Class.Semigroupoid.product(
+            a,
+            Class.Semigroupoid.product(b, c)
+          )
 
-      right =
-        Class.Semigroupoid.product(
-          a,
-          Class.Semigroupoid.product(b, c)
-        )
-
-      assert Class.Setoid.equal?(left, right)
+        assert Class.Setoid.equal?(left, right)
       end
     end
   end

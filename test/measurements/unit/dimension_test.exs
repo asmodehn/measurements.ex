@@ -4,9 +4,9 @@ defmodule Measurements.Unit.DimensionTest do
 
   alias Measurements.Unit.Dimension
 
-  import TypeClass
+  import Class
 
-  classtest(Measurements.Additive.Semigroup, for: Dimension)
-  classtest(Measurements.Additive.Monoid, for: Dimension)
-  classtest(Measurements.Additive.Group, for: Dimension)
+  classtest(Class.Semigroupoid, for: Dimension)
+  classtest(Class.Category, for: Dimension)
+  classtest(Class.Groupoid, for: Dimension)
 end

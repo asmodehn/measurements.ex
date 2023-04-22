@@ -134,7 +134,8 @@ defmodule Measurements.Unit.Parser do
     end)
     |> Enum.reduce({:ok, Scale.new(), Dimension.new()}, fn
       {s, d}, {:ok, accs, accd} ->
-        {:ok, %{Scale.prod(accs, s) | dimension: Dimension.sum(accd, d)}, Dimension.sum(accd, d)}
+        {:ok, %{Scale.prod(accs, s) | dimension: Dimension.product(accd, d)},
+         Dimension.product(accd, d)}
     end)
 
     # TODO :return error when parse is not possible
