@@ -12,18 +12,24 @@ defmodule Measurements.MixProject do
       package: package(),
       deps: deps(),
 
+      # options
+      elixirc_paths: elixirc_paths(Mix.env()),
+      elixirc_options: [warnings_as_errors: true],
+
       # Docs
       name: "Measurements",
+      docs: docs(),
       source_url: "https://github.com/asmodehn/measurements.ex",
       # homepage_url: "http://YOUR_PROJECT_HOMEPAGE",
-      docs: [
-        # The main page in the docs
-        main: "readme",
-        # logo: "path/to/logo.png",
-        extras: ["README.md", "DEMO.livemd"]
-      ]
+      docs: docs()
     ]
   end
+
+  # Specifies which paths to compile per environment.
+  # to be able to interactively use test/support
+  defp elixirc_paths(:dev), do: ["lib", "test/support"]
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help compile.app" to learn about applications.
   def application do
@@ -35,6 +41,15 @@ defmodule Measurements.MixProject do
   defp description() do
     "Measurements helps to manage values with errors, representing physical quantities.
     The package provides error propagation during calculations, as well as some automatic unit conversion."
+  end
+
+  defp docs do
+    [
+      # The main page in the docs
+      main: "readme",
+      # logo: "path/to/logo.png",
+      extras: ["README.md", "DEMO.livemd"]
+    ]
   end
 
   defp package() do

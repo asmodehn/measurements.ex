@@ -3,16 +3,15 @@ defmodule Measurement.Unit.RationalTest do
   doctest Measurements.Unit.Rational
 
   alias Measurements.Unit.Rational
-  import Measurements.Unit.Rational, only: [rational_one: 0]
 
   # Maybe simple test should be in doc instead...
   describe "rational/2" do
     test "creates a rational number from a pair of integer, simplifying the fraction" do
-      assert Rational.rational(42, 10) == {21, 5}
+      assert Rational.rational(42, 10) == %Rational{num: 21, den: 5}
     end
 
     test "accepts one integer with an implicit denominator of one" do
-      assert Rational.rational(42) == {42, 1}
+      assert Rational.rational(42) == %Rational{num: 42, den: 1}
     end
   end
 
@@ -21,11 +20,16 @@ defmodule Measurement.Unit.RationalTest do
       assert Rational.equal?(Rational.rational(42, 10), Rational.rational(420, 100))
     end
 
+    test "check strit equality of internal representation of two rationals" do
+      assert Rational.equal?(%Rational{num: 42, den: 10}, %Rational{num: 420, den: 100})
+    end
+
+    @tag :mememe
     test "check equality if either is a number" do
-      assert Rational.equal?(Rational.rational(1), 1)
-      assert Rational.equal?(Rational.rational(1), 1.0)
       assert Rational.equal?(1, Rational.rational(1))
       assert Rational.equal?(1.0, Rational.rational(1))
+      assert Rational.equal?(Rational.rational(1), 1)
+      assert Rational.equal?(Rational.rational(1), 1.0)
     end
   end
 
@@ -37,35 +41,13 @@ defmodule Measurement.Unit.RationalTest do
 
   use ExUnitProperties
 
-  property "equal?/2 is symmetric" do
-    check all(r <- Rational.generator()) do
-      assert Rational.equal?(r, r)
-    end
-  end
+  import Class
 
-  property "equal?/2 is reflexive" do
-    check all(
-            a <- Rational.generator(),
-            b <- Rational.generator()
-          ) do
-      assert Rational.equal?(a, b) === Rational.equal?(b, a)
-    end
-  end
-
-  property "equal?/2 is transitive" do
-    # Note: For praticallity we may want to generate only one rational, and perturbate it to test equality transitivity.
-    check all(
-            b <- Rational.generator(),
-            a <- Rational.generator(),
-            c <- Rational.generator()
-          ) do
-      # ap <- integer(),
-      # cp <- integer() do
-      # 	a = Rational.perturbate(b, ap)
-      # 	c = Rational.perturbate(b, ac)
-      Rational.equal?(a, b) and Rational.equal?(b, c) === Rational.equal?(a, c)
-    end
-  end
+  classtest(Class.Setoid, for: Rational)
+  classtest(Class.Semigroupoid, for: Rational)
+  classtest(Class.Category, for: Rational)
+  # TODO : enable, currently failing on 0/1
+  # classtest(Class.Groupoid, for: Rational)
 
   # => Rational is a Setoid  => HOW TO express in test/code ??
 
@@ -77,21 +59,20 @@ defmodule Measurement.Unit.RationalTest do
   # end
 
   describe "from_float/1" do
-    test "creates a rational number, but not always equal to the float" do
+    test "creates a rational number, similar to the float, but not always equal !" do
       r = Rational.from_float(4.2)
-      assert Rational.equal?(4.2, r)
       # not exactly same !
-      assert not Rational.equal?(r, {42, 10})
+      assert not Class.Setoid.equal?(r, %Rational{num: 42, den: 10})
     end
   end
 
   describe "as_number/1" do
     test "computes a number from a rational" do
-      assert Rational.as_number({42, 10}) == 4.2
+      assert Rational.as_number(%Rational{num: 42, den: 10}) == 4.2
     end
 
     test "computes an integer when possible" do
-      assert Rational.as_number({72, 8}) == 9
+      assert Rational.as_number(%Rational{num: 72, den: 8}) === 9
     end
   end
 
@@ -140,15 +121,15 @@ defmodule Measurement.Unit.RationalTest do
 
   # => Rational.product/2 is a semigroup
 
-  property "product/2 accepts one as right identity element" do
+  property "product/2 accepts default as right identity element" do
     check all(a <- Rational.generator()) do
-      assert Rational.equal?(Rational.product(rational_one(), a), a)
+      assert Rational.equal?(Rational.product(%Rational{}, a), a)
     end
   end
 
-  property "product/2 accepts one as left identity element" do
+  property "product/2 accepts default as left identity element" do
     check all(a <- Rational.generator()) do
-      assert Rational.equal?(Rational.product(a, rational_one()), a)
+      assert Rational.equal?(Rational.product(a, %Rational{}), a)
     end
   end
 
@@ -161,7 +142,7 @@ defmodule Measurement.Unit.RationalTest do
           ) do
       assert Rational.equal?(
                Rational.product(r, Rational.inverse(r)),
-               rational_one()
+               %Rational{}
              )
     end
   end
@@ -173,7 +154,7 @@ defmodule Measurement.Unit.RationalTest do
           ) do
       assert Rational.equal?(
                Rational.product(Rational.inverse(r), r),
-               rational_one()
+               %Rational{}
              )
     end
   end

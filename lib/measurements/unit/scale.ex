@@ -8,11 +8,10 @@ defmodule Measurements.Unit.Scale do
   alias Measurements.Unit.Dimension
   alias Measurements.Unit.Rational
 
-  import Measurements.Unit.Rational,
-    only: [is_rational: 1, is_rational_invertible: 1, rational_one: 0]
+  use Measurements.Unit.Rational
 
   defstruct magnitude: 0,
-            coefficient: rational_one(),
+            coefficient: %Rational{},
             dimension: %Dimension{}
 
   @typedoc "Scale Type"
@@ -23,6 +22,7 @@ defmodule Measurements.Unit.Scale do
           dimension: Dimension.t()
         }
 
+  # TODO : make it always invertible by forbidding 0.
   defguard is_scale_invertible(s) when is_rational_invertible(s.coefficient)
 
   # coeff defaults to in for precision and simplicity.
@@ -60,7 +60,7 @@ defmodule Measurements.Unit.Scale do
   end
 
   def prod(%Measurements.Unit.Scale{} = d1, %Measurements.Unit.Scale{} = d2) do
-    dim = Measurements.Unit.Dimension.sum(d1.dimension, d2.dimension)
+    dim = Measurements.Unit.Dimension.product(d1.dimension, d2.dimension)
     coef = Rational.product(d1.coefficient, d2.coefficient)
 
     %Measurements.Unit.Scale{
@@ -73,9 +73,9 @@ defmodule Measurements.Unit.Scale do
   def ratio(%Measurements.Unit.Scale{} = d1, %Measurements.Unit.Scale{} = d2) do
     # there is no diff for dimensions (not a group ?)
     dim =
-      Measurements.Unit.Dimension.sum(
+      Measurements.Unit.Dimension.product(
         d1.dimension,
-        Measurements.Unit.Dimension.opposite(d2.dimension)
+        Measurements.Unit.Dimension.inverse(d2.dimension)
       )
 
     coef = Rational.ratio(d1.coefficient, d2.coefficient)
